@@ -15,9 +15,9 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
   const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
   const getLoadColor = (load: number) => {
-    if (load > 7) return 'bg-red-500'
-    if (load >= 4) return 'bg-orange-500'
-    if (load > 0) return 'bg-blue-500'
+    if (load > 7) return 'bg-load-high'
+    if (load >= 4) return 'bg-load-medium'
+    if (load > 0) return 'bg-load-low'
     return 'bg-transparent'
   }
 

@@ -42,11 +42,12 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
   }, [date])
 
   const getLoadColor = (load: number) => {
-    if (load > 7) return 'bg-red-500'
-    if (load >= 4) return 'bg-orange-500'
-    if (load > 0) return 'bg-blue-500'
+    if (load > 7) return 'bg-load-high text-white'
+    if (load >= 4) return 'bg-load-medium text-stone-900'
+    if (load > 0) return 'bg-load-low text-white'
     return 'bg-transparent'
   }
+  // -----------------------------------------------
 
   const getDayClasses = (isSelected: boolean, isToday: boolean) => {
     return cn(
