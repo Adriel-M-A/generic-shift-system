@@ -128,18 +128,11 @@
     -ms-overflow-style: none;
   }
 
-  /* Scroll gap: add small separation between content and scrollbar on elements with scroll */
-  :where(
-    body,
-    [class*='overflow-auto'],
-    [class*='overflow-scroll'],
-    [class*='overflow-y-auto'],
-    [class*='overflow-y-scroll'],
-    [class*='overflow-x-auto'],
-    [class*='overflow-x-scroll']
-  ) {
+  /* Scroll gap: add small separation between content and scrollbar on elements with vertical scroll */
+  :where([class*='overflow-y-auto'], [class*='overflow-y-scroll']) {
     scrollbar-gutter: stable;
-    padding-inline-end: var(--scrollbar-gap, 8px);
+    /* left spacing so elements don't sit tight against the scrollbar (LTR). Use inline-start so it respects direction */
+    padding-inline-start: var(--scrollbar-gap, 8px);
   }
 }
 

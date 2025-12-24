@@ -12,6 +12,7 @@ import Login from '@auth/pages/Login'
 import Perfil from '@auth/pages/Perfil'
 
 import { UIProvider, useUI } from '@core/context/UIContext'
+import { Turnos } from './modules/shift/pages/Turnos'
 
 const BlockOverlay = () => {
   const { isBlocked, blockMessage } = useUI()
@@ -47,10 +48,8 @@ const RootRoutes = () => {
         ) : (
           <Routes>
             <Route element={<AppLayout />}>
-              <Route
-                path="/"
-                element={<div className="p-10 text-2xl font-bold">Panel de Inicio</div>}
-              />
+              <Route path="/" element={<Navigate to="/turnos" replace />} />
+              <Route path="/turnos" element={<Turnos />} />
               <Route path="/configuracion" element={<Configuracion />} />
               {FLAGS.ENABLE_AUTH && <Route path="/perfil" element={<Perfil />} />}
               <Route
