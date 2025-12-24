@@ -1,5 +1,3 @@
-// src/renderer/src/modules/shift/components/YearView.tsx
-
 import { useShifts } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
 
@@ -7,9 +5,10 @@ interface YearViewProps {
   year: number
   currentDate: Date | undefined
   onSelectDate: (date: Date) => void
+  onMonthDoubleClick: (monthIndex: number) => void
 }
 
-export function YearView({ year, currentDate, onSelectDate }: YearViewProps) {
+export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }: YearViewProps) {
   const { getDailyLoad } = useShifts()
 
   const months = Array.from({ length: 12 }, (_, i) => i)
@@ -47,7 +46,9 @@ export function YearView({ year, currentDate, onSelectDate }: YearViewProps) {
           return (
             <div
               key={monthIndex}
-              className="border border-border/40 rounded-lg p-3 bg-card shadow-sm hover:border-border/80 transition-all flex flex-col"
+              onDoubleClick={() => onMonthDoubleClick(monthIndex)}
+              className="border border-border/40 rounded-lg p-3 bg-card shadow-sm hover:border-border/80 hover:bg-muted/10 transition-all flex flex-col select-none cursor-pointer"
+              title="Doble click para ver este mes"
             >
               <h4 className="text-xs font-bold capitalize mb-2 text-primary/80 text-center">
                 {monthName}
@@ -73,7 +74,10 @@ export function YearView({ year, currentDate, onSelectDate }: YearViewProps) {
                   return (
                     <button
                       key={day}
-                      onClick={() => onSelectDate(thisDate)}
+                      onClick={(e) => {
+                        e.stopPropagation() // Evita que el click simple active eventos del padre si fuera necesario
+                        onSelectDate(thisDate)
+                      }}
                       title={load > 0 ? `${load} turnos` : undefined}
                       className={cn(
                         'relative flex items-center justify-center rounded-[3px] transition-all outline-none',

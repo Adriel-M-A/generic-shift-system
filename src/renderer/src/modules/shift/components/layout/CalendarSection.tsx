@@ -1,5 +1,3 @@
-// src/renderer/src/modules/shift/components/layout/CalendarSection.tsx
-
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 import { Button } from '@ui/button'
@@ -37,11 +35,18 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
     setDate(newDate)
   }
 
+  const handleMonthDoubleClick = (monthIndex: number) => {
+    const newDate = new Date(safeDate)
+    newDate.setMonth(monthIndex)
+    // Opcional: Si quieres que al entrar al mes seleccione el día 1, descomenta esto:
+    // newDate.setDate(1)
+    setDate(newDate)
+    setViewMode('month')
+  }
+
   return (
     <Card className="h-full flex flex-col border-border/50 shadow-sm overflow-hidden">
-      {/* Header: Altura fija (h-14) y items-center para alineación vertical perfecta */}
       <CardHeader className="relative h-14 flex flex-row items-center justify-between space-y-0 border-b bg-card z-10 px-4 py-0">
-        {/* 1. Izquierda: Título */}
         <CardTitle className="text-lg flex items-center gap-2 text-primary/80">
           <CalendarIcon className="h-5 w-5" />
           <span className="hidden sm:inline text-foreground font-semibold tracking-tight">
@@ -49,7 +54,6 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
           </span>
         </CardTitle>
 
-        {/* 2. Centro: Selector de Año (Absoluto + Efectos Hover) */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <div className="flex items-center bg-muted/30 rounded-md border border-border/40 overflow-hidden shadow-sm transition-all duration-200 hover:border-primary/40 hover:bg-muted/60 hover:shadow-md group">
             <Button
@@ -78,7 +82,6 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
           </div>
         </div>
 
-        {/* 3. Derecha: Selector de Vista (Mes/Año) */}
         <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-md shrink-0 border border-transparent hover:border-border/40 transition-all">
           <Button
             variant={viewMode === 'month' ? 'secondary' : 'ghost'}
@@ -113,7 +116,12 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
         {viewMode === 'month' ? (
           <MonthView date={safeDate} setDate={setDate} getDailyLoad={getDailyLoad} />
         ) : (
-          <YearView year={safeDate.getFullYear()} currentDate={date} onSelectDate={setDate} />
+          <YearView
+            year={safeDate.getFullYear()}
+            currentDate={date}
+            onSelectDate={setDate}
+            onMonthDoubleClick={handleMonthDoubleClick}
+          />
         )}
       </CardContent>
     </Card>
