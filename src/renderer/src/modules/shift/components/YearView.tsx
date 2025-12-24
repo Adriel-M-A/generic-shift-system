@@ -23,18 +23,16 @@ export function YearView({ year, currentDate, onSelectDate }: YearViewProps) {
   }
 
   return (
-    // AQUÍ ESTÁ LA CLAVE: h-full + overflow-y-auto crea el contenedor con scroll propio
-    <div className="h-full overflow-y-auto pr-2 pb-2 scroll-smooth">
+    <div className="h-full overflow-y-auto pr-2 pb-2 pt-2 scroll-smooth">
       <div
         className={cn(
           'grid gap-3',
-          // Lógica de columnas adaptativa (Zig-Zag) para que los números siempre sean legibles:
-          'grid-cols-1', // Móvil vertical: 1 col (Scroll vertical fluido)
-          'sm:grid-cols-2', // Móvil horizontal / Tablet chica: 2 cols
-          'md:grid-cols-1', // Tablet vertical (Layout dividido): Vuelve a 1 col para no achicar
-          'lg:grid-cols-2', // Laptop: 2 cols
-          'xl:grid-cols-3', // Monitor: 3 cols
-          '2xl:grid-cols-4' // Monitor grande: 4 cols
+          'grid-cols-1',
+          'sm:grid-cols-2',
+          'md:grid-cols-1',
+          'lg:grid-cols-2',
+          'xl:grid-cols-3',
+          '2xl:grid-cols-4'
         )}
       >
         {months.map((monthIndex) => {
@@ -79,8 +77,6 @@ export function YearView({ year, currentDate, onSelectDate }: YearViewProps) {
                       title={load > 0 ? `${load} turnos` : undefined}
                       className={cn(
                         'relative flex items-center justify-center rounded-[3px] transition-all outline-none',
-                        // Altura Fija en pantallas chicas (h-8) vs Cuadrada en grandes (aspect-square)
-                        // Esto permite que entren ~3 meses en la vista vertical de un móvil.
                         'h-8 sm:h-auto sm:aspect-square',
                         'hover:bg-muted focus:ring-1 focus:ring-primary/50',
                         isSelected

@@ -1,5 +1,3 @@
-// src/renderer/src/modules/shift/components/MonthView.tsx
-
 import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@lib/utils'
@@ -60,7 +58,6 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
 
   return (
     <div className="flex flex-col h-full bg-card shadow-sm overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between p-3 border-b bg-card shrink-0">
         <h2 className="text-lg font-semibold capitalize flex items-center gap-2 pl-1">
           {monthName}
@@ -81,7 +78,6 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
         </div>
       </div>
 
-      {/* Días semana */}
       <div className="grid grid-cols-7 border-b bg-muted/40 shrink-0">
         {weekDays.map((day) => (
           <div
@@ -93,7 +89,6 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
         ))}
       </div>
 
-      {/* Grid del calendario */}
       <div className="flex-1 overflow-y-auto p-2">
         <div className="grid grid-cols-7 gap-1 auto-rows-min">
           {calendarData.map((slot, index) => {
@@ -115,7 +110,6 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
                   getDayClasses(isSelected, isToday)
                 )}
               >
-                {/* Parte Superior: Día */}
                 <div className="w-full flex justify-between items-start">
                   <span
                     className={cn(
@@ -127,16 +121,14 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
                   </span>
                 </div>
 
-                {/* Parte Inferior: Texto de turnos (Oculto en móvil) */}
                 {load > 0 && (
-                  <div className="mt-auto w-full text-right hidden sm:block pb-1">
+                  <div className="mt-auto w-full text-right hidden lg:block pb-1">
                     <span className="text-[10px] font-medium block truncate text-foreground/70">
                       {load} {load === 1 ? 'turno' : 'turnos'}
                     </span>
                   </div>
                 )}
 
-                {/* Indicador de carga inferior (barra) */}
                 {load > 0 && (
                   <div
                     className={cn(
