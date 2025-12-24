@@ -97,9 +97,28 @@ const migrationsList: Migration[] = [
         }
       }
     }
+  },
+  {
+    id: 3,
+    name: '003_create_shifts_table',
+    up: (db: Database) => {
+      console.log('Ejecutando migración: 003_create_shifts_table')
+
+      // Creamos la tabla 'turnos'
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS turnos (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          fecha TEXT NOT NULL,
+          hora TEXT NOT NULL,
+          cliente TEXT NOT NULL,
+          servicio TEXT NOT NULL,
+          profesional TEXT DEFAULT 'Staff',
+          estado TEXT DEFAULT 'pendiente',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+    }
   }
-  // Futuro:
-  // { id: 3, name: '003_example', up: (db) => db.exec('...') }
 ]
 
 // --- LÓGICA DEL EJECUTOR (RUNNER) ---

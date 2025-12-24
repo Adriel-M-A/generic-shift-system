@@ -8,6 +8,7 @@ import { registerWindowHandlers } from './core/window.ipc'
 import { registerBackupHandlers, runAutoBackup } from './core/backup.ipc'
 import { runMigrations } from './core/migrations'
 import { AuthModule } from './modules/auth'
+import { shiftModule } from './modules/shift'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -42,6 +43,7 @@ function createWindow(): void {
   runMigrations(db)
 
   AuthModule.register()
+  shiftModule.init()
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])

@@ -22,6 +22,13 @@ const api = {
   roles: {
     getAll: () => ipcRenderer.invoke('roles:get'),
     update: (data) => ipcRenderer.invoke('roles:update', data)
+  },
+  // --- MÓDULO SHIFT (Agregado) ---
+  shift: {
+    create: (data) => ipcRenderer.invoke('shift:create', data),
+    getByDate: (date) => ipcRenderer.invoke('shift:getByDate', date),
+    getMonthlyLoad: (params) => ipcRenderer.invoke('shift:getMonthlyLoad', params),
+    updateStatus: (params) => ipcRenderer.invoke('shift:updateStatus', params)
   }
 }
 
