@@ -3,6 +3,7 @@ import { Calendar as CalendarIcon, List } from 'lucide-react'
 import { Button } from '@ui/button'
 import { cn } from '@lib/utils'
 import { Turno, EstadoTurno } from '../../types'
+import { NewShiftData } from '../../hooks/useShifts' // Asegúrate de importar esto
 import { CalendarSection } from './CalendarSection'
 import { ShiftSection } from './ShiftSection'
 
@@ -13,6 +14,7 @@ interface TurnosLayoutProps {
   getDailyLoad: (date: Date) => number
   formatDateHeader: (d: Date) => string
   changeShiftStatus: (id: number, status: EstadoTurno) => void
+  addShift: (data: NewShiftData) => void // <--- Nueva prop
 }
 
 type MobileTab = 'calendar' | 'list'
@@ -23,7 +25,8 @@ export function TurnosLayout({
   shifts,
   getDailyLoad,
   formatDateHeader,
-  changeShiftStatus
+  changeShiftStatus,
+  addShift // <--- Recibimos
 }: TurnosLayoutProps) {
   const [mobileTab, setMobileTab] = useState<MobileTab>('calendar')
 
@@ -69,6 +72,7 @@ export function TurnosLayout({
             shifts={shifts}
             formatDateHeader={formatDateHeader}
             changeShiftStatus={changeShiftStatus}
+            addShift={addShift} // <--- Pasamos
           />
         </div>
       </div>

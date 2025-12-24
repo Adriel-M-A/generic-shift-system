@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Turno, ViewMode, ShiftStats, EstadoTurno } from '../types'
 
+export interface NewShiftData {
+  cliente: string
+  servicio: string
+  hora: string
+}
+
 const INITIAL_DATA: Turno[] = [
   {
     id: 1,
@@ -71,6 +77,19 @@ export function useShifts() {
     return () => clearInterval(timer)
   }, [])
 
+  // Función para agregar turno
+  const addShift = (data: NewShiftData) => {
+    const newShift: Turno = {
+      id: Date.now(),
+      cliente: data.cliente,
+      servicio: data.servicio,
+      hora: data.hora,
+      profesional: 'Staff',
+      estado: 'pendiente'
+    }
+    setShifts((prev) => [...prev, newShift])
+  }
+
   const changeShiftStatus = (id: number, newStatus: EstadoTurno) => {
     setShifts((prev) =>
       prev.map((turno) => (turno.id === id ? { ...turno, estado: newStatus } : turno))
@@ -100,6 +119,7 @@ export function useShifts() {
     setViewMode,
     currentTime,
     shifts,
+    addShift,
     changeShiftStatus,
     stats,
     getDailyLoad,

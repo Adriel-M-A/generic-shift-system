@@ -1,4 +1,5 @@
 import { Turno, EstadoTurno } from '../../types'
+import { NewShiftData } from '../../hooks/useShifts'
 import { ShiftList } from '../ShiftList'
 
 interface ShiftSectionProps {
@@ -6,13 +7,15 @@ interface ShiftSectionProps {
   shifts: Turno[]
   formatDateHeader: (d: Date) => string
   changeShiftStatus: (id: number, status: EstadoTurno) => void
+  addShift: (data: NewShiftData) => void // <--- Nueva prop
 }
 
 export function ShiftSection({
   date,
   shifts,
   formatDateHeader,
-  changeShiftStatus
+  changeShiftStatus,
+  addShift // <--- Recibimos
 }: ShiftSectionProps) {
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -21,6 +24,7 @@ export function ShiftSection({
         shifts={shifts}
         formatDateHeader={formatDateHeader}
         changeShiftStatus={changeShiftStatus}
+        addShift={addShift} // <--- Pasamos a la lista
       />
     </div>
   )

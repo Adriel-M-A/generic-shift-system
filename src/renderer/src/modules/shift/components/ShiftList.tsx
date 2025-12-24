@@ -16,19 +16,27 @@ import {
 } from '@ui/alert-dialog'
 import { Check, Clock, Briefcase, CalendarCheck2, X, RotateCcw } from 'lucide-react'
 import { Turno, EstadoTurno } from '../types'
+import { NewShiftData } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
+import { ShiftForm } from './ShiftForm'
 
 interface ShiftListProps {
   date: Date | undefined
   shifts: Turno[]
   formatDateHeader: (d: Date) => string
   changeShiftStatus: (id: number, status: EstadoTurno) => void
+  addShift: (data: NewShiftData) => void
 }
 
-export function ShiftList({ date, shifts, formatDateHeader, changeShiftStatus }: ShiftListProps) {
+export function ShiftList({
+  date,
+  shifts,
+  formatDateHeader,
+  changeShiftStatus,
+  addShift
+}: ShiftListProps) {
   const [shiftToCancel, setShiftToCancel] = useState<number | null>(null)
 
-  // 1. Buscamos los datos del turno seleccionado para mostrar en el dialog
   const shiftToCancelData = useMemo(() => {
     return shifts.find((s) => s.id === shiftToCancel)
   }, [shifts, shiftToCancel])
@@ -64,14 +72,18 @@ export function ShiftList({ date, shifts, formatDateHeader, changeShiftStatus }:
   return (
     <>
       <Card className="flex flex-col h-full border-border/50 shadow-sm overflow-hidden bg-muted/10">
-        <CardHeader className="pb-3 shrink-0 bg-card border-b z-10">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <CalendarCheck2 className="h-5 w-5 text-primary" />
-            Agenda del Día
-          </CardTitle>
-          <p className="text-sm text-muted-foreground capitalize font-medium">
-            {date ? formatDateHeader(date) : 'Seleccione una fecha'}
-          </p>
+        <CardHeader className="pb-3 shrink-0 bg-card border-b z-10 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CalendarCheck2 className="h-5 w-5 text-primary" />
+              Agenda del Día
+            </CardTitle>
+            <p className="text-sm text-muted-foreground capitalize font-medium">
+              {date ? formatDateHeader(date) : 'Seleccione una fecha'}
+            </p>
+          </div>
+
+          <ShiftForm currentDate={date} onSave={addShift} formatDateHeader={formatDateHeader} />
         </CardHeader>
 
         <CardContent className="flex-1 p-0 min-h-0 overflow-hidden relative">
@@ -185,7 +197,6 @@ export function ShiftList({ date, shifts, formatDateHeader, changeShiftStatus }:
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          {/* 2. Información detallada del turno a cancelar */}
           {shiftToCancelData && (
             <div className="bg-muted/40 border border-border/50 rounded-md p-3 text-sm space-y-2 my-1">
               <div className="flex justify-between items-center border-b border-border/30 pb-2">

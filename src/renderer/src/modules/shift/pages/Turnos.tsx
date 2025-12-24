@@ -11,7 +11,8 @@ export function Turnos() {
     getDailyLoad,
     formatTime,
     formatDateHeader,
-    changeShiftStatus
+    changeShiftStatus,
+    addShift
   } = useShifts()
 
   return (
@@ -29,6 +30,7 @@ export function Turnos() {
         getDailyLoad={getDailyLoad}
         formatDateHeader={formatDateHeader}
         changeShiftStatus={changeShiftStatus}
+        addShift={addShift} // <--- Pasamos la función aquí
       />
     </div>
   )
