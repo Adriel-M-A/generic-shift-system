@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Turno, ViewMode, ShiftStats } from '../types'
+import { Turno, ViewMode, ShiftStats, EstadoTurno } from '../types'
 
-// --- MOCK DATA ---
-const MOCK_TURNOS: Turno[] = [
+const INITIAL_DATA: Turno[] = [
   {
     id: 1,
     cliente: 'Maria Gonzalez',
@@ -65,28 +64,30 @@ export function useShifts() {
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [shifts, setShifts] = useState<Turno[]>(INITIAL_DATA)
 
-  // Reloj en tiempo real
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
 
-  // Estadísticas calculadas
-  const stats: ShiftStats = {
-    total: MOCK_TURNOS.length,
-    pendientes: MOCK_TURNOS.filter((t) => t.estado === 'pendiente' || t.estado === 'en_curso')
-      .length,
-    completados: MOCK_TURNOS.filter((t) => t.estado === 'completado').length
+  const changeShiftStatus = (id: number, newStatus: EstadoTurno) => {
+    setShifts((prev) =>
+      prev.map((turno) => (turno.id === id ? { ...turno, estado: newStatus } : turno))
+    )
   }
 
-  // Simulación de carga de trabajo por día
+  const stats: ShiftStats = {
+    total: shifts.length,
+    pendientes: shifts.filter((t) => t.estado === 'pendiente' || t.estado === 'en_curso').length,
+    completados: shifts.filter((t) => t.estado === 'completado').length
+  }
+
   const getDailyLoad = (d: Date) => {
     const seed = d.getDate() + d.getMonth()
-    return seed % 12 // Retorna entre 0 y 11 turnos
+    return seed % 12
   }
 
-  // Helpers de formato
   const formatTime = (d: Date) =>
     d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
   const formatDateHeader = (d: Date) =>
@@ -98,7 +99,8 @@ export function useShifts() {
     viewMode,
     setViewMode,
     currentTime,
-    shifts: MOCK_TURNOS,
+    shifts,
+    changeShiftStatus,
     stats,
     getDailyLoad,
     formatTime,

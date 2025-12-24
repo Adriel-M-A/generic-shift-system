@@ -3,8 +3,16 @@ import { ShiftHeader } from '../components/ShiftHeader'
 import { TurnosLayout } from '../components/layout/TurnosLayout'
 
 export function Turnos() {
-  const { date, setDate, currentTime, shifts, getDailyLoad, formatTime, formatDateHeader } =
-    useShifts()
+  const {
+    date,
+    setDate,
+    currentTime,
+    shifts,
+    getDailyLoad,
+    formatTime,
+    formatDateHeader,
+    changeShiftStatus
+  } = useShifts()
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] gap-4 p-2 animate-in fade-in duration-500">
@@ -20,6 +28,7 @@ export function Turnos() {
         shifts={shifts}
         getDailyLoad={getDailyLoad}
         formatDateHeader={formatDateHeader}
+        changeShiftStatus={changeShiftStatus}
       />
     </div>
   )

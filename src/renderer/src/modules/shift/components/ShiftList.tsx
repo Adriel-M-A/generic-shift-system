@@ -1,95 +1,221 @@
-// src/renderer/src/modules/shifts/components/ShiftList.tsx
-
-import { Card, CardTitle, CardContent } from '@ui/card'
-import { Button } from '@ui/button'
+import { useMemo, useState } from 'react'
+import { Card, CardHeader, CardTitle, CardContent } from '@ui/card'
 import { ScrollArea } from '@ui/scroll-area'
 import { Badge } from '@ui/badge'
+import { Button } from '@ui/button'
 import { Separator } from '@ui/separator'
-import { Plus, Calendar as CalendarIcon, Clock, Briefcase, User } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@ui/alert-dialog'
+import { Check, Clock, Briefcase, CalendarCheck2, X, RotateCcw } from 'lucide-react'
 import { Turno, EstadoTurno } from '../types'
+import { cn } from '@lib/utils'
 
 interface ShiftListProps {
   date: Date | undefined
   shifts: Turno[]
   formatDateHeader: (d: Date) => string
+  changeShiftStatus: (id: number, status: EstadoTurno) => void
 }
 
-export function ShiftList({ date, shifts, formatDateHeader }: ShiftListProps) {
+export function ShiftList({ date, shifts, formatDateHeader, changeShiftStatus }: ShiftListProps) {
+  const [shiftToCancel, setShiftToCancel] = useState<number | null>(null)
+
+  // 1. Buscamos los datos del turno seleccionado para mostrar en el dialog
+  const shiftToCancelData = useMemo(() => {
+    return shifts.find((s) => s.id === shiftToCancel)
+  }, [shifts, shiftToCancel])
+
+  const filteredShifts = useMemo(() => {
+    return shifts
+      .filter((s) => s.estado === 'pendiente' || s.estado === 'completado')
+      .sort((a, b) => a.hora.localeCompare(b.hora))
+  }, [shifts])
+
   const getStatusColor = (estado: EstadoTurno) => {
     switch (estado) {
       case 'pendiente':
-        return 'bg-yellow-500/10 text-yellow-600 border-yellow-200'
+        return 'bg-yellow-500/10 text-yellow-600 border-yellow-200 hover:bg-yellow-500/20'
       case 'en_curso':
-        return 'bg-blue-500/10 text-blue-600 border-blue-200'
+        return 'bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20'
       case 'completado':
-        return 'bg-green-500/10 text-green-600 border-green-200'
+        return 'bg-green-500/10 text-green-600 border-green-200 hover:bg-green-500/20'
       case 'cancelado':
-        return 'bg-red-500/10 text-red-600 border-red-200'
+        return 'bg-red-500/10 text-red-600 border-red-200 hover:bg-red-500/20'
       default:
         return 'bg-gray-100 text-gray-600'
     }
   }
 
-  return (
-    <Card className="flex-1 flex flex-col border-border/50 shadow-sm bg-muted/10 overflow-hidden">
-      <div className="p-4 border-b bg-card rounded-t-xl flex items-center justify-between shrink-0">
-        <div>
-          <h2 className="font-bold text-lg">Agenda</h2>
-          <p className="text-xs text-muted-foreground capitalize">
-            {date ? formatDateHeader(date) : 'Selecciona una fecha'}
-          </p>
-        </div>
-        <Button size="sm" className="gap-2 shadow-sm">
-          <Plus className="h-4 w-4" /> Nuevo
-        </Button>
-      </div>
+  const confirmCancel = () => {
+    if (shiftToCancel) {
+      changeShiftStatus(shiftToCancel, 'cancelado')
+      setShiftToCancel(null)
+    }
+  }
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-3">
-          {shifts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-2 opacity-50">
-              <CalendarIcon className="h-10 w-10" />
-              <p>No hay turnos para este día.</p>
-            </div>
-          ) : (
-            shifts.map((turno) => (
-              <div
-                key={turno.id}
-                className="group flex flex-col gap-2 p-3 rounded-lg border bg-card hover:border-primary/50 transition-all shadow-sm cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <Badge
-                    variant="outline"
-                    className="flex items-center gap-1 font-mono text-xs px-2 py-1 bg-background"
-                  >
-                    <Clock className="h-3 w-3" />
-                    {turno.hora}
-                  </Badge>
-                  <Badge
-                    className={`text-[10px] px-2 py-0.5 border-0 shadow-none ${getStatusColor(turno.estado)}`}
-                  >
-                    {turno.estado.replace('_', ' ').toUpperCase()}
-                  </Badge>
+  return (
+    <>
+      <Card className="flex flex-col h-full border-border/50 shadow-sm overflow-hidden bg-muted/10">
+        <CardHeader className="pb-3 shrink-0 bg-card border-b z-10">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <CalendarCheck2 className="h-5 w-5 text-primary" />
+            Agenda del Día
+          </CardTitle>
+          <p className="text-sm text-muted-foreground capitalize font-medium">
+            {date ? formatDateHeader(date) : 'Seleccione una fecha'}
+          </p>
+        </CardHeader>
+
+        <CardContent className="flex-1 p-0 min-h-0 overflow-hidden relative">
+          <ScrollArea className="h-full">
+            <div className="flex flex-col gap-3 p-4">
+              {filteredShifts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground gap-2">
+                  <Clock className="h-10 w-10 opacity-20" />
+                  <p className="text-sm">No hay turnos para mostrar.</p>
                 </div>
-                <Separator className="bg-border/40" />
-                <div className="flex justify-between items-end">
-                  <div className="space-y-0.5">
-                    <h3 className="font-bold text-sm text-foreground">{turno.cliente}</h3>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Briefcase className="h-3 w-3" />
-                      {turno.servicio}
+              ) : (
+                filteredShifts.map((turno) => {
+                  const isCompleted = turno.estado === 'completado'
+
+                  return (
+                    <div
+                      key={turno.id}
+                      className={cn(
+                        'flex flex-col gap-2 p-3 rounded-md border border-border/50 bg-card transition-all',
+                        'hover:bg-muted/30 hover:border-primary/20 hover:shadow-sm'
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <Badge
+                          variant="outline"
+                          className="flex items-center gap-1 font-mono text-xs px-2 py-1 bg-background"
+                        >
+                          <Clock className="h-3 w-3" />
+                          {turno.hora}
+                        </Badge>
+
+                        <Badge
+                          className={cn(
+                            'text-[10px] px-2 py-0.5 border shadow-none',
+                            getStatusColor(turno.estado)
+                          )}
+                        >
+                          {turno.estado.replace('_', ' ').toUpperCase()}
+                        </Badge>
+                      </div>
+
+                      <Separator className="bg-border/40" />
+
+                      <div className="flex justify-between items-end">
+                        <div className="space-y-0.5">
+                          <h3 className="font-bold text-sm text-foreground">{turno.cliente}</h3>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Briefcase className="h-3 w-3" />
+                            {turno.servicio}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          {isCompleted ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-orange-600 hover:bg-orange-500/10"
+                              onClick={() => changeShiftStatus(turno.id, 'pendiente')}
+                              title="Volver a pendiente (Deshacer)"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">Deshacer</span>
+                            </Button>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-full"
+                                onClick={() => setShiftToCancel(turno.id)}
+                                title="Cancelar turno"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-green-600 hover:bg-green-500/10"
+                                onClick={() => changeShiftStatus(turno.id, 'completado')}
+                                title="Marcar como completado"
+                              >
+                                <div className="h-4 w-4 rounded-full border border-current flex items-center justify-center">
+                                  <Check className="h-2.5 w-2.5 opacity-0 hover:opacity-100" />
+                                </div>
+                                <span className="hidden sm:inline">Completar</span>
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                    <User className="h-3 w-3" />
-                    {turno.profesional}
-                  </div>
-                </div>
+                  )
+                })
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={!!shiftToCancel} onOpenChange={(open) => !open && setShiftToCancel(null)}>
+        <AlertDialogContent className="sm:max-w-106.25">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600 flex items-center gap-2">
+              <X className="h-5 w-5" /> Cancelar Turno
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro que deseas cancelar este turno? Esta acción moverá el turno a
+              "Cancelados".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* 2. Información detallada del turno a cancelar */}
+          {shiftToCancelData && (
+            <div className="bg-muted/40 border border-border/50 rounded-md p-3 text-sm space-y-2 my-1">
+              <div className="flex justify-between items-center border-b border-border/30 pb-2">
+                <span className="text-muted-foreground">Horario:</span>
+                <Badge variant="outline" className="font-mono bg-background">
+                  {shiftToCancelData.hora}
+                </Badge>
               </div>
-            ))
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Cliente:</span>
+                <span className="font-semibold text-foreground">{shiftToCancelData.cliente}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Servicio:</span>
+                <span className="font-medium text-foreground">{shiftToCancelData.servicio}</span>
+              </div>
+            </div>
           )}
-        </div>
-      </ScrollArea>
-    </Card>
+
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel>Mantener turno</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white border-0"
+              onClick={confirmCancel}
+            >
+              Sí, cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
