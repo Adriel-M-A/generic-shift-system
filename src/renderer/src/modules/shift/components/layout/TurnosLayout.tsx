@@ -28,49 +28,47 @@ export function TurnosLayout({
   const [mobileTab, setMobileTab] = useState<MobileTab>('calendar')
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 gap-4">
-      {/* Selector de Vistas (Solo visible en Móvil < md) */}
-      <div className="flex md:hidden bg-muted p-1 rounded-lg shrink-0">
+    // IMPORTANTE: h-full aquí aprovecha el calc(100vh-4rem) de Turnos.tsx
+    <div className="flex flex-col h-full min-h-0 gap-3">
+      {/* Pestañas para Móvil */}
+      <div className="flex md:hidden bg-muted/50 p-1 rounded-lg shrink-0 border border-border/50">
         <Button
           variant={mobileTab === 'calendar' ? 'default' : 'ghost'}
           size="sm"
-          className="flex-1 gap-2"
+          className="flex-1 gap-2 h-8"
           onClick={() => setMobileTab('calendar')}
         >
-          <CalendarIcon className="h-4 w-4" /> Calendario
+          <CalendarIcon className="h-3.5 w-3.5" /> Calendario
         </Button>
         <Button
           variant={mobileTab === 'list' ? 'default' : 'ghost'}
           size="sm"
-          className="flex-1 gap-2"
+          className="flex-1 gap-2 h-8"
           onClick={() => setMobileTab('list')}
         >
-          <List className="h-4 w-4" /> Agenda
+          <List className="h-3.5 w-3.5" /> Agenda
         </Button>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 min-h-0">
-        {/* Sección Calendario */}
+      {/* Grid Principal */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
+        {/* Columna Calendario */}
         <div
           className={cn(
-            'lg:col-span-7 flex flex-col h-full min-h-0 transition-all',
-            // Lógica de visibilidad:
-            // En móvil: mostrar solo si el tab es 'calendar'
-            // En desktop (md+): mostrar SIEMPRE (block)
-            mobileTab === 'calendar' ? 'block' : 'hidden md:block'
+            'lg:col-span-7 flex flex-col h-full min-h-0 overflow-hidden transition-all',
+            // CORRECCIÓN: Usar 'flex' en lugar de 'block' para mantener la estructura flex
+            mobileTab === 'calendar' ? 'flex' : 'hidden md:flex'
           )}
         >
           <CalendarSection date={date} setDate={setDate} getDailyLoad={getDailyLoad} />
         </div>
 
-        {/* Sección Agenda/Turnos */}
+        {/* Columna Agenda */}
         <div
           className={cn(
-            'lg:col-span-5 flex flex-col h-full min-h-0 transition-all',
-            // Lógica de visibilidad:
-            // En móvil: mostrar solo si el tab es 'list'
-            // En desktop (md+): mostrar SIEMPRE (block)
-            mobileTab === 'list' ? 'block' : 'hidden md:block'
+            'lg:col-span-5 flex flex-col h-full min-h-0 overflow-hidden transition-all',
+            // CORRECCIÓN: Usar 'flex' en lugar de 'block'
+            mobileTab === 'list' ? 'flex' : 'hidden md:flex'
           )}
         >
           <ShiftSection date={date} shifts={shifts} formatDateHeader={formatDateHeader} />

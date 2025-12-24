@@ -1,4 +1,4 @@
-// src/renderer/src/modules/shifts/components/layout/CalendarSection.tsx
+// src/renderer/src/modules/shift/components/layout/CalendarSection.tsx
 
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
@@ -6,6 +6,7 @@ import { Button } from '@ui/button'
 import { Calendar as CalendarIcon, Maximize, LayoutGrid } from 'lucide-react'
 import { MonthView } from '../MonthView'
 import { YearView } from '../YearView'
+import { cn } from '@lib/utils'
 
 interface CalendarSectionProps {
   date: Date | undefined
@@ -19,14 +20,14 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
   const safeDate = useMemo(() => date || new Date(), [date])
 
   return (
-    <Card className="flex-1 border-border/50 shadow-sm flex flex-col min-h-0 overflow-hidden">
-      <CardHeader className="pb-2 shrink-0 flex flex-row items-center justify-between space-y-0">
+    // CAMBIO 1: Agregamos 'h-full' para asegurar que ocupe toda la altura de la columna
+    <Card className="h-full flex flex-col border-border/50 shadow-sm overflow-hidden">
+      <CardHeader className="pb-2 shrink-0 flex flex-row items-center justify-between space-y-0 border-b bg-card z-10">
         <CardTitle className="text-lg flex items-center gap-2">
           <CalendarIcon className="h-5 w-5 text-primary" />
           <span className="truncate">Calendario {safeDate.getFullYear()}</span>
         </CardTitle>
 
-        {/* Vista selector responsivo */}
         <div className="flex items-center gap-1 bg-muted p-1 rounded-md shrink-0">
           <Button
             variant={viewMode === 'month' ? 'secondary' : 'ghost'}
@@ -51,7 +52,8 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 p-0 min-h-0 overflow-hidden relative">
+      {/* CAMBIO 2: flex-1 y min-h-0 son vitales para que el scroll interno funcione */}
+      <CardContent className="flex-1 p-0 min-h-0 relative bg-background">
         {viewMode === 'month' ? (
           <MonthView date={safeDate} setDate={setDate} getDailyLoad={getDailyLoad} />
         ) : (
