@@ -2,36 +2,22 @@ import { useState } from 'react'
 import { Calendar as CalendarIcon, List } from 'lucide-react'
 import { Button } from '@ui/button'
 import { cn } from '@lib/utils'
-import { Turno, EstadoTurno } from '../../types'
-import { NewShiftData } from '../../hooks/useShifts' // Asegúrate de importar esto
 import { CalendarSection } from './CalendarSection'
 import { ShiftSection } from './ShiftSection'
-
-interface TurnosLayoutProps {
-  date: Date | undefined
-  setDate: (date: Date) => void
-  shifts: Turno[]
-  getDailyLoad: (date: Date) => number
-  formatDateHeader: (d: Date) => string
-  changeShiftStatus: (id: number, status: EstadoTurno) => void
-  addShift: (data: NewShiftData) => void // <--- Nueva prop
-}
+import { useShifts } from '../../hooks/useShifts'
 
 type MobileTab = 'calendar' | 'list'
 
-export function TurnosLayout({
-  date,
-  setDate,
-  shifts,
-  getDailyLoad,
-  formatDateHeader,
-  changeShiftStatus,
-  addShift // <--- Recibimos
-}: TurnosLayoutProps) {
+export function TurnosLayout() {
+  // Consumimos los datos directamente del contexto
+  const { date, setDate, shifts, getDailyLoad, formatDateHeader, changeShiftStatus, addShift } =
+    useShifts()
+
   const [mobileTab, setMobileTab] = useState<MobileTab>('calendar')
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-3">
+      {/* ... (La barra de botones móvil sigue igual) ... */}
       <div className="flex md:hidden bg-muted/50 p-1 rounded-lg shrink-0 border border-border/50">
         <Button
           variant={mobileTab === 'calendar' ? 'default' : 'ghost'}
@@ -72,7 +58,7 @@ export function TurnosLayout({
             shifts={shifts}
             formatDateHeader={formatDateHeader}
             changeShiftStatus={changeShiftStatus}
-            addShift={addShift} // <--- Pasamos
+            addShift={addShift}
           />
         </div>
       </div>

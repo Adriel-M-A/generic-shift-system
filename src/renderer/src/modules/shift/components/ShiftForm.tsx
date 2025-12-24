@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { Plus, Save, Clock, Briefcase, ChevronDown, ChevronUp, Check, Minus } from 'lucide-react'
+import { Plus, Save, Clock, Briefcase, ChevronDown, ChevronUp, Check } from 'lucide-react'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Label } from '@ui/label'
@@ -12,7 +12,9 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@ui/dialog'
-import { NewShiftData } from '../hooks/useShifts'
+// Importamos el nuevo componente
+import { TimePicker } from '@ui/time-picker'
+import { NewShiftData } from '../context/ShiftContext'
 import { cn } from '@lib/utils'
 
 const SERVICIOS_SUGERIDOS = [
@@ -40,8 +42,8 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
   const [isServiceOpen, setIsServiceOpen] = useState(false)
   const serviceWrapperRef = useRef<HTMLDivElement>(null)
 
-  const [hour, setHour] = useState('09')
-  const [minute, setMinute] = useState('00')
+  // ESTADO SIMPLIFICADO: Manejamos el tiempo como un solo string
+  const [time, setTime] = useState('09:00')
 
   const [formData, setFormData] = useState<{ cliente: string; servicio: string }>({
     cliente: '',
@@ -66,67 +68,18 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
     )
   }, [formData.servicio])
 
-  const pad = (n: string | number) => n.toString().padStart(2, '0')
-
-  // --- LÓGICA DE BOTONES ---
-  const adjustHour = (amount: number) => {
-    let val = parseInt(hour) + amount
-    if (isNaN(val)) val = 9 // Valor por defecto si está vacío
-
-    // Ciclo 0-23
-    if (val > 23) val = 0
-    if (val < 0) val = 23
-
-    setHour(val.toString())
-  }
-
-  const adjustMinute = (amount: number) => {
-    let val = parseInt(minute) + amount * 5
-    if (isNaN(val)) val = 0
-
-    // Ciclo 0-55
-    if (val > 55) val = 0
-    if (val < 0) val = 55
-
-    setMinute(val.toString())
-  }
-  // -------------------------
-
-  const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = parseInt(e.target.value)
-    if (isNaN(val)) return setHour('')
-    if (val < 0) val = 0
-    if (val > 23) val = 23
-    setHour(val.toString())
-  }
-
-  const handleMinuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = parseInt(e.target.value)
-    if (isNaN(val)) return setMinute('')
-    if (val < 0) val = 0
-    if (val > 59) val = 55
-    setMinute(val.toString())
-  }
-
-  const handleBlurTime = () => {
-    setHour((prev) => (prev === '' ? '09' : pad(prev)))
-    setMinute((prev) => (prev === '' ? '00' : pad(prev)))
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const finalTime = `${pad(hour)}:${pad(minute)}`
 
     onSave({
       cliente: formData.cliente,
       servicio: formData.servicio,
-      hora: finalTime
+      hora: time // Enviamos el valor directo del TimePicker
     })
 
     setOpen(false)
     setFormData({ cliente: '', servicio: '' })
-    setHour('09')
-    setMinute('00')
+    setTime('09:00') // Reset
     setIsServiceOpen(false)
   }
 
@@ -154,102 +107,16 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
           </DialogHeader>
 
           <div className="grid gap-5 py-1">
-            {/* 1. Selección de Horario con Botones Personalizados */}
+            {/* 1. Selección de Horario (AHORA USANDO TIMEPICKER) */}
             <div className="grid gap-2">
               <Label className="flex items-center gap-2 text-muted-foreground font-medium text-sm">
                 <Clock className="h-3.5 w-3.5" /> Horario
               </Label>
 
-              <div className="flex items-center gap-4">
-                {/* HORA */}
-                <div className="flex items-center flex-1 gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-9 shrink-0"
-                    onClick={() => adjustHour(-1)}
-                    tabIndex={-1}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-
-                  <div className="relative flex-1">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={23}
-                      value={hour}
-                      onChange={handleHourChange}
-                      onBlur={handleBlurTime}
-                      className="text-center font-mono text-lg h-10 px-2"
-                      placeholder="HH"
-                    />
-                    {/* Texto 'hs' superpuesto */}
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background pl-1">
-                      hs
-                    </span>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-9 shrink-0"
-                    onClick={() => adjustHour(1)}
-                    tabIndex={-1}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-
-                <span className="text-xl font-bold text-muted-foreground/30 pb-1">:</span>
-
-                {/* MINUTOS */}
-                <div className="flex items-center flex-1 gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-9 shrink-0"
-                    onClick={() => adjustMinute(-1)}
-                    tabIndex={-1}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-
-                  <div className="relative flex-1">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={59}
-                      step={5}
-                      value={minute}
-                      onChange={handleMinuteChange}
-                      onBlur={handleBlurTime}
-                      className="text-center font-mono text-lg h-10 px-2"
-                      placeholder="MM"
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none bg-background pl-1">
-                      min
-                    </span>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-10 w-9 shrink-0"
-                    onClick={() => adjustMinute(1)}
-                    tabIndex={-1}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
+              <TimePicker value={time} onChange={setTime} />
             </div>
 
-            {/* 2. Selección de Servicio */}
+            {/* 2. Selección de Servicio (Lógica de autocompletado igual que antes) */}
             <div className="grid gap-2 relative z-50" ref={serviceWrapperRef}>
               <Label
                 htmlFor="servicio"

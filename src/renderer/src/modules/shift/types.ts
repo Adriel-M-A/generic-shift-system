@@ -3,6 +3,7 @@ export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'en_curso'
 
 export interface Turno {
   id: number
+  fecha: string
   cliente: string
   servicio: string
   hora: string
