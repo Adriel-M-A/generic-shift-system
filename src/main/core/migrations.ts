@@ -50,7 +50,7 @@ const migrationsList: Migration[] = [
           adminPerms
         )
 
-        const staffPerms = JSON.stringify(['dashboard', 'perfil', 'perfil_cuenta'])
+        const staffPerms = JSON.stringify(['shift', 'services', 'perfil', 'perfil_cuenta'])
         db.prepare('INSERT INTO roles (id, label, permissions) VALUES (?, ?, ?)').run(
           2,
           'Staff',
@@ -77,9 +77,29 @@ const migrationsList: Migration[] = [
         ).run('Admin', 'Principal', 'administrador', pass, 1)
       }
     }
+  },
+  {
+    id: 2,
+    name: '002_add_services_to_staff',
+    up: (db: Database) => {
+      console.log('Ejecutando migración: 002_add_services_to_staff')
+      const row = db.prepare('SELECT permissions FROM roles WHERE id = ?').get(2) as any
+      if (row && row.permissions) {
+        try {
+          const perms = JSON.parse(row.permissions) as string[]
+          const set = new Set(perms)
+          set.add('services')
+          set.add('shift')
+          const newPerms = JSON.stringify(Array.from(set))
+          db.prepare('UPDATE roles SET permissions = ? WHERE id = ?').run(newPerms, 2)
+        } catch (e) {
+          console.error('Error al parsear permisos del rol 2:', e)
+        }
+      }
+    }
   }
   // Futuro:
-  // { id: 2, name: '002_add_email_to_users', up: (db) => db.exec('ALTER TABLE...') }
+  // { id: 3, name: '003_example', up: (db) => db.exec('...') }
 ]
 
 // --- LÓGICA DEL EJECUTOR (RUNNER) ---

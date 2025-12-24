@@ -1,6 +1,7 @@
 // IDs DE PERMISOS (Compartidos entre Back y Front)
 export const PERMISSIONS = {
-  DASHBOARD: 'dashboard',
+  SHIFT: 'shift',
+  SERVICES: 'services',
   PERFIL: {
     ROOT: 'perfil',
     CUENTA: 'perfil_cuenta',

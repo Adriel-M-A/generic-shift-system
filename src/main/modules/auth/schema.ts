@@ -32,14 +32,14 @@ export function initAuthSchema(db: Database): void {
       adminPerms
     )
 
-    const staffPerms = JSON.stringify(['dashboard', 'perfil', 'perfil_cuenta'])
+    const staffPerms = JSON.stringify(['shift', 'services', 'perfil', 'perfil_cuenta'])
     db.prepare('INSERT INTO roles (id, label, permissions) VALUES (?, ?, ?)').run(
       2,
       'Staff',
       staffPerms
     )
 
-    const auditorPerms = JSON.stringify(['dashboard', 'configuracion', 'config_apariencia'])
+    const auditorPerms = JSON.stringify(['shift', 'configuracion', 'config_apariencia'])
     db.prepare('INSERT INTO roles (id, label, permissions) VALUES (?, ?, ?)').run(
       3,
       'Auditor',

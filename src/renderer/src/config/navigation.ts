@@ -6,22 +6,37 @@ import {
   Monitor,
   Shield,
   Users,
-  KeyRound
+  KeyRound,
+  CalendarClock, // Icono para Turnos
+  Tags // Icono para Servicios
 } from 'lucide-react'
-// IMPORTAMOS DESDE SHARED (Ajusta la ruta según tu estructura final)
+
+// IMPORTAMOS DESDE SHARED
 import { PERMISSIONS } from '../../../shared/permissions'
-// Re-exportamos para que los componentes del frontend lo usen fácil
+
+// Re-exportamos para facilitar el uso en componentes
 export { PERMISSIONS }
 
 export const APP_NAVIGATION = [
+  // --- TURNOS (SHIFT) ---
   {
-    id: PERMISSIONS.DASHBOARD,
-    label: 'Dashboard',
-    path: '/',
-    icon: LayoutDashboard,
+    id: PERMISSIONS.SHIFT,
+    label: 'Turnos',
+    path: '/turnos',
+    icon: CalendarClock,
     type: 'item',
     hiddenInSidebar: false
   },
+  // --- SERVICIOS (SERVICES) ---
+  {
+    id: PERMISSIONS.SERVICES,
+    label: 'Servicios',
+    path: '/servicios',
+    icon: Tags,
+    type: 'item',
+    hiddenInSidebar: false
+  },
+  // --- PERFIL ---
   {
     id: PERMISSIONS.PERFIL.ROOT,
     label: 'Perfil y Acceso',
@@ -36,6 +51,7 @@ export const APP_NAVIGATION = [
       { id: PERMISSIONS.PERFIL.PERMISOS, label: 'Matriz de Permisos', icon: Shield }
     ]
   },
+  // --- CONFIGURACIÓN ---
   {
     id: PERMISSIONS.CONFIG.ROOT,
     label: 'Configuración',
