@@ -1,3 +1,5 @@
+// src/renderer/src/modules/shifts/components/YearView.tsx
+
 import { useShifts } from '../hooks/useShifts'
 
 interface YearViewProps {
@@ -7,7 +9,6 @@ interface YearViewProps {
 }
 
 export function YearView({ year, currentDate, onSelectDate }: YearViewProps) {
-  // Reutilizamos la lógica de carga para los colores en la vista anual
   const { getDailyLoad } = useShifts()
   const months = Array.from({ length: 12 }, (_, i) => i)
   const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
@@ -43,7 +44,6 @@ export function YearView({ year, currentDate, onSelectDate }: YearViewProps) {
                 const isSelected = currentDate?.toDateString() === thisDate.toDateString()
                 const isToday = new Date().toDateString() === thisDate.toDateString()
 
-                // Lógica de colores duplicada aquí para mantener consistencia
                 const load = getDailyLoad(thisDate)
                 const borderClass =
                   load > 7
