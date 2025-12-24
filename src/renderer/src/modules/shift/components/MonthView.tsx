@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@lib/utils'
+import { useShifts } from '../hooks/useShifts' // <--- Importamos el hook
 
 interface MonthViewProps {
   date: Date
@@ -13,7 +14,15 @@ interface CalendarSlot {
 }
 
 export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
-  const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  const { config } = useShifts() // <--- Obtenemos la config
+
+  // Lógica dinámica para los días de la semana según configuración
+  const weekDays = useMemo(() => {
+    return config.startOfWeek === 'monday'
+      ? ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+      : ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  }, [config.startOfWeek])
+
   const monthName = date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
 
   const handlePrevMonth = () => {
@@ -28,7 +37,16 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
     const year = date.getFullYear()
     const month = date.getMonth()
     const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const startDayIndex = new Date(year, month, 1).getDay()
+
+    // Obtenemos el día de la semana (0 = Domingo, 1 = Lunes...)
+    const startDay = new Date(year, month, 1).getDay()
+
+    // Calculamos cuántos espacios vacíos dejar al principio
+    let startDayIndex = startDay
+    if (config.startOfWeek === 'monday') {
+      // Si la semana empieza el lunes, ajustamos: Domingo (0) pasa a ser 6, Lunes (1) pasa a ser 0
+      startDayIndex = startDay === 0 ? 6 : startDay - 1
+    }
 
     const days: CalendarSlot[] = []
 
@@ -39,14 +57,17 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
       days.push({ day: i })
     }
     return days
-  }, [date])
+  }, [date, config.startOfWeek])
 
+  // Lógica de colores conectada a la configuración
   const getLoadColor = (load: number) => {
-    if (load > 7) return 'bg-load-high text-white'
-    if (load >= 4) return 'bg-load-medium text-stone-900'
+    // Usamos los umbrales configurados en DB
+    if (load > config.thresholds.medium) return 'bg-load-high text-white'
+    if (load > config.thresholds.low) return 'bg-load-medium text-stone-900'
     if (load > 0) return 'bg-load-low text-white'
     return 'bg-transparent'
   }
+
   // -----------------------------------------------
 
   const getDayClasses = (isSelected: boolean, isToday: boolean) => {

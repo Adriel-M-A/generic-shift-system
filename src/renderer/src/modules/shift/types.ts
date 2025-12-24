@@ -16,3 +16,9 @@ export interface ShiftStats {
   pendientes: number
   completados: number
 }
+
+export interface ShiftConfig {
+  openingTime: string
+  closingTime: string
+  interval: number
+}

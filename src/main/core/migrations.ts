@@ -118,6 +118,35 @@ const migrationsList: Migration[] = [
         )
       `)
     }
+  },
+  {
+    id: 4,
+    name: '004_create_settings_table',
+    up: (db: Database) => {
+      console.log('Ejecutando migración: 004_create_settings_table')
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `)
+
+      // Insertamos configuración por defecto COMPLETA si no existe
+      const count = db.prepare('SELECT count(*) as c FROM settings').get() as any
+      if (count.c === 0) {
+        const insert = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)')
+
+        // Operativos
+        insert.run('shift_opening', '08:00')
+        insert.run('shift_closing', '20:00')
+        insert.run('shift_interval', '30')
+
+        // Visuales / Calendario (LO QUE FALTABA)
+        insert.run('calendar_start_day', 'monday') // 'monday' o 'sunday'
+        insert.run('threshold_low', '5')
+        insert.run('threshold_medium', '10')
+      }
+    }
   }
 ]
 

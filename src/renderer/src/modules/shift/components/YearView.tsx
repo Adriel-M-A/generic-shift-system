@@ -1,5 +1,6 @@
 import { useShifts } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
+import { useMemo } from 'react' // Agregamos useMemo para optimizar si quieres, o lo dejamos directo
 
 interface YearViewProps {
   year: number
@@ -9,14 +10,20 @@ interface YearViewProps {
 }
 
 export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }: YearViewProps) {
-  const { getDailyLoad } = useShifts()
+  const { getDailyLoad, config } = useShifts() // <--- Traemos config
 
   const months = Array.from({ length: 12 }, (_, i) => i)
-  const weekDays = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
+  // Ajuste dinámico de encabezados de semana
+  const weekDays =
+    config.startOfWeek === 'monday'
+      ? ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+      : ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+
+  // Ajuste de colores dinámico
   const getLoadColor = (load: number) => {
-    if (load > 7) return 'bg-load-high'
-    if (load >= 4) return 'bg-load-medium'
+    if (load > config.thresholds.medium) return 'bg-load-high'
+    if (load > config.thresholds.low) return 'bg-load-medium'
     if (load > 0) return 'bg-load-low'
     return 'bg-transparent'
   }
@@ -41,7 +48,13 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
           const startDay = new Date(year, monthIndex, 1).getDay()
 
           const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
-          const emptySlots = Array.from({ length: startDay }, (_, i) => i)
+
+          // Ajuste de slots vacíos según inicio de semana
+          let emptySlotsCount = startDay
+          if (config.startOfWeek === 'monday') {
+            emptySlotsCount = startDay === 0 ? 6 : startDay - 1
+          }
+          const emptySlots = Array.from({ length: emptySlotsCount }, (_, i) => i)
 
           return (
             <div
@@ -75,7 +88,7 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
                     <button
                       key={day}
                       onClick={(e) => {
-                        e.stopPropagation() // Evita que el click simple active eventos del padre si fuera necesario
+                        e.stopPropagation()
                         onSelectDate(thisDate)
                       }}
                       title={load > 0 ? `${load} turnos` : undefined}

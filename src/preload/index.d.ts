@@ -26,7 +26,6 @@ interface RolesAPI {
   }) => Promise<{ success: boolean; message?: string }>
 }
 
-// --- INTERFAZ SHIFT (Agregada) ---
 interface ShiftAPI {
   create: (data: { fecha: string; hora: string; cliente: string; servicio: string }) => Promise<any>
   getByDate: (date: string) => Promise<any[]>
@@ -34,11 +33,17 @@ interface ShiftAPI {
   updateStatus: (params: { id: number; estado: string }) => Promise<any>
 }
 
+interface SettingsAPI {
+  getAll: () => Promise<Record<string, string>>
+  setMany: (settings: Record<string, string>) => Promise<any>
+}
+
 interface API {
   window: WindowAPI
   auth: AuthAPI
   roles: RolesAPI
-  shift: ShiftAPI // <--- Conectado aquí
+  shift: ShiftAPI
+  settings: SettingsAPI
 }
 
 declare global {

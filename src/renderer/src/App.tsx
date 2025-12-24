@@ -13,6 +13,8 @@ import Perfil from '@auth/pages/Perfil'
 
 import { UIProvider, useUI } from '@core/context/UIContext'
 import { Turnos } from './modules/shift/pages/Turnos'
+// 1. IMPORTAMOS EL PROVIDER
+import { ShiftProvider } from './modules/shift/context/ShiftContext'
 
 const BlockOverlay = () => {
   const { isBlocked, blockMessage } = useUI()
@@ -46,18 +48,21 @@ const RootRoutes = () => {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         ) : (
-          <Routes>
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<Navigate to="/turnos" replace />} />
-              <Route path="/turnos" element={<Turnos />} />
-              <Route path="/configuracion" element={<Configuracion />} />
-              {FLAGS.ENABLE_AUTH && <Route path="/perfil" element={<Perfil />} />}
-              <Route
-                path="*"
-                element={<div className="p-10 text-red-500">Página no encontrada</div>}
-              />
-            </Route>
-          </Routes>
+          // 2. ENVOLVEMOS LAS RUTAS AUTENTICADAS
+          <ShiftProvider>
+            <Routes>
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<Navigate to="/turnos" replace />} />
+                <Route path="/turnos" element={<Turnos />} />
+                <Route path="/configuracion" element={<Configuracion />} />
+                {FLAGS.ENABLE_AUTH && <Route path="/perfil" element={<Perfil />} />}
+                <Route
+                  path="*"
+                  element={<div className="p-10 text-red-500">Página no encontrada</div>}
+                />
+              </Route>
+            </Routes>
+          </ShiftProvider>
         )}
       </div>
     </div>
