@@ -1,19 +1,29 @@
 import { Minus, Plus } from 'lucide-react'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
-import { Label } from '@ui/label'
 
 interface TimePickerProps {
-  value: string // Formato esperado "HH:mm"
+  value: string // "HH:mm"
   onChange: (value: string) => void
-  step?: number // Intervalo de minutos (por defecto 5)
+  step?: number // Minutos (ej: 15, 30)
+  minTime?: string // Ej: "08:00"
+  maxTime?: string // Ej: "20:00"
 }
 
-export function TimePicker({ value, onChange, step = 5 }: TimePickerProps) {
-  // Separamos el string "09:00" en horas y minutos numéricos
+export function TimePicker({
+  value,
+  onChange,
+  step = 15,
+  minTime = '00:00',
+  maxTime = '23:59'
+}: TimePickerProps) {
   const [hourStr, minuteStr] = value.split(':')
-  const hour = parseInt(hourStr || '9')
-  const minute = parseInt(minuteStr || '0')
+  let hour = parseInt(hourStr || '0')
+  let minute = parseInt(minuteStr || '0')
+
+  // Parseamos límites
+  const [minH, minM] = minTime.split(':').map(Number)
+  const [maxH, maxM] = maxTime.split(':').map(Number)
 
   const pad = (n: number) => n.toString().padStart(2, '0')
 
@@ -21,30 +31,39 @@ export function TimePicker({ value, onChange, step = 5 }: TimePickerProps) {
     onChange(`${pad(newHour)}:${pad(newMinute)}`)
   }
 
-  // Lógica de ajuste de HORA (Ciclo 0-23)
+  // Ajuste de HORA (Respetando rango Apertura - Cierre)
   const adjustHour = (amount: number) => {
     let newVal = hour + amount
-    if (newVal > 23) newVal = 0
-    if (newVal < 0) newVal = 23
+
+    // Lógica de Loop: Si me paso del cierre, vuelvo a la apertura (y viceversa)
+    if (newVal > maxH) newVal = minH
+    if (newVal < minH) newVal = maxH
+
     updateTime(newVal, minute)
   }
 
-  // Lógica de ajuste de MINUTOS (Ciclo 0-55 con pasos)
+  // Ajuste de MINUTOS (Ciclo 0-59 respetando el paso)
   const adjustMinute = (amount: number) => {
     let newVal = minute + amount * step
+
     if (newVal >= 60) newVal = 0
-    if (newVal < 0) newVal = 60 - step // Ej: si step es 5, vuelve a 55
+    if (newVal < 0) newVal = 60 - step
+
+    // Opcional: Si el paso es grande (ej: 60 min), asegurar que no quede en negativo raro
+    if (newVal < 0) newVal = 0
+
     updateTime(hour, newVal)
   }
 
-  // Manejo manual de input
+  // Validación manual al escribir
   const handleInputChange = (type: 'hour' | 'minute', e: React.ChangeEvent<HTMLInputElement>) => {
     let val = parseInt(e.target.value)
-    if (isNaN(val)) return // Ignoramos si borra todo
+    if (isNaN(val)) return
 
     if (type === 'hour') {
-      if (val > 23) val = 23
-      if (val < 0) val = 0
+      // Si escribe una hora fuera de rango, la forzamos al límite más cercano
+      if (val > maxH) val = maxH
+      if (val < minH) val = minH
       updateTime(val, minute)
     } else {
       if (val > 59) val = 59

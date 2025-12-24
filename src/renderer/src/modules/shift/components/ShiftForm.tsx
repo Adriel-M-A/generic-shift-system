@@ -12,9 +12,9 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@ui/dialog'
-// Importamos el nuevo componente
 import { TimePicker } from '@ui/time-picker'
-import { NewShiftData } from '../context/ShiftContext'
+// 1. IMPORTAMOS EL HOOK
+import { useShifts, NewShiftData } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
 
 const SERVICIOS_SUGERIDOS = [
@@ -38,12 +38,23 @@ interface ShiftFormProps {
 }
 
 export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormProps) {
+  // 2. OBTENEMOS LA CONFIGURACIÓN GLOBAL
+  const { config } = useShifts()
+
   const [open, setOpen] = useState(false)
   const [isServiceOpen, setIsServiceOpen] = useState(false)
   const serviceWrapperRef = useRef<HTMLDivElement>(null)
 
-  // ESTADO SIMPLIFICADO: Manejamos el tiempo como un solo string
-  const [time, setTime] = useState('09:00')
+  // 3. INICIALIZAMOS CON LA HORA DE APERTURA REAL
+  // Usamos un estado que se actualiza si cambia la config
+  const [time, setTime] = useState(config.openingTime || '09:00')
+
+  // Efecto para actualizar la hora por defecto si cambia la config (ej: carga la BD)
+  useEffect(() => {
+    if (config.openingTime) {
+      setTime(config.openingTime)
+    }
+  }, [config.openingTime])
 
   const [formData, setFormData] = useState<{ cliente: string; servicio: string }>({
     cliente: '',
@@ -74,12 +85,12 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
     onSave({
       cliente: formData.cliente,
       servicio: formData.servicio,
-      hora: time // Enviamos el valor directo del TimePicker
+      hora: time
     })
 
     setOpen(false)
     setFormData({ cliente: '', servicio: '' })
-    setTime('09:00') // Reset
+    setTime(config.openingTime) // Reset a la hora de apertura
     setIsServiceOpen(false)
   }
 
@@ -107,16 +118,27 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
           </DialogHeader>
 
           <div className="grid gap-5 py-1">
-            {/* 1. Selección de Horario (AHORA USANDO TIMEPICKER) */}
+            {/* 1. SELECCIÓN DE HORARIO CONECTADA */}
             <div className="grid gap-2">
               <Label className="flex items-center gap-2 text-muted-foreground font-medium text-sm">
                 <Clock className="h-3.5 w-3.5" /> Horario
               </Label>
 
-              <TimePicker value={time} onChange={setTime} />
+              <TimePicker
+                value={time}
+                onChange={setTime}
+                step={config.interval} // Frecuencia real (ej: 30 min)
+                minTime={config.openingTime} // Apertura real (ej: 10:00)
+                maxTime={config.closingTime} // Cierre real (ej: 20:00)
+              />
+
+              <p className="text-[10px] text-muted-foreground">
+                * Turnos cada {config.interval} minutos entre {config.openingTime} y{' '}
+                {config.closingTime}.
+              </p>
             </div>
 
-            {/* 2. Selección de Servicio (Lógica de autocompletado igual que antes) */}
+            {/* 2. Selección de Servicio (Igual que antes) */}
             <div className="grid gap-2 relative z-50" ref={serviceWrapperRef}>
               <Label
                 htmlFor="servicio"
