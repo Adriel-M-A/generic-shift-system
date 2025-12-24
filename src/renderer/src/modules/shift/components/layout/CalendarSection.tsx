@@ -3,7 +3,13 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 import { Button } from '@ui/button'
-import { Calendar as CalendarIcon, Maximize, LayoutGrid } from 'lucide-react'
+import {
+  Calendar as CalendarIcon,
+  Maximize,
+  LayoutGrid,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react'
 import { MonthView } from '../MonthView'
 import { YearView } from '../YearView'
 import { cn } from '@lib/utils'
@@ -19,20 +25,68 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
 
   const safeDate = useMemo(() => date || new Date(), [date])
 
+  const handlePrevYear = () => {
+    const newDate = new Date(safeDate)
+    newDate.setFullYear(safeDate.getFullYear() - 1)
+    setDate(newDate)
+  }
+
+  const handleNextYear = () => {
+    const newDate = new Date(safeDate)
+    newDate.setFullYear(safeDate.getFullYear() + 1)
+    setDate(newDate)
+  }
+
   return (
-    // CAMBIO 1: Agregamos 'h-full' para asegurar que ocupe toda la altura de la columna
     <Card className="h-full flex flex-col border-border/50 shadow-sm overflow-hidden">
-      <CardHeader className="pb-2 shrink-0 flex flex-row items-center justify-between space-y-0 border-b bg-card z-10">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <CalendarIcon className="h-5 w-5 text-primary" />
-          <span className="truncate">Calendario {safeDate.getFullYear()}</span>
+      {/* Header: Altura fija (h-14) y items-center para alineación vertical perfecta */}
+      <CardHeader className="relative h-14 flex flex-row items-center justify-between space-y-0 border-b bg-card z-10 px-4 py-0">
+        {/* 1. Izquierda: Título */}
+        <CardTitle className="text-lg flex items-center gap-2 text-primary/80">
+          <CalendarIcon className="h-5 w-5" />
+          <span className="hidden sm:inline text-foreground font-semibold tracking-tight">
+            Calendario
+          </span>
         </CardTitle>
 
-        <div className="flex items-center gap-1 bg-muted p-1 rounded-md shrink-0">
+        {/* 2. Centro: Selector de Año (Absoluto + Efectos Hover) */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="flex items-center bg-muted/30 rounded-md border border-border/40 overflow-hidden shadow-sm transition-all duration-200 hover:border-primary/40 hover:bg-muted/60 hover:shadow-md group">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-none hover:bg-background hover:text-primary transition-colors"
+              onClick={handlePrevYear}
+              title="Año anterior"
+            >
+              <ChevronLeft className="h-3.5 w-3.5 opacity-70 group-hover:opacity-100" />
+            </Button>
+
+            <span className="text-sm font-bold px-3 tabular-nums text-center min-w-[3.5rem] select-none cursor-default text-foreground/90 group-hover:text-primary transition-colors">
+              {safeDate.getFullYear()}
+            </span>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded-none hover:bg-background hover:text-primary transition-colors"
+              onClick={handleNextYear}
+              title="Año siguiente"
+            >
+              <ChevronRight className="h-3.5 w-3.5 opacity-70 group-hover:opacity-100" />
+            </Button>
+          </div>
+        </div>
+
+        {/* 3. Derecha: Selector de Vista (Mes/Año) */}
+        <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-md shrink-0 border border-transparent hover:border-border/40 transition-all">
           <Button
             variant={viewMode === 'month' ? 'secondary' : 'ghost'}
             size="sm"
-            className="h-7 px-2 text-xs gap-1"
+            className={cn(
+              'h-7 px-2 text-xs gap-1 transition-all',
+              viewMode === 'month' && 'bg-background shadow-sm text-primary font-medium'
+            )}
             onClick={() => setViewMode('month')}
             title="Vista mensual"
           >
@@ -42,7 +96,10 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
           <Button
             variant={viewMode === 'year' ? 'secondary' : 'ghost'}
             size="sm"
-            className="h-7 px-2 text-xs gap-1"
+            className={cn(
+              'h-7 px-2 text-xs gap-1 transition-all',
+              viewMode === 'year' && 'bg-background shadow-sm text-primary font-medium'
+            )}
             onClick={() => setViewMode('year')}
             title="Vista anual"
           >
@@ -52,7 +109,6 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
         </div>
       </CardHeader>
 
-      {/* CAMBIO 2: flex-1 y min-h-0 son vitales para que el scroll interno funcione */}
       <CardContent className="flex-1 p-0 min-h-0 relative bg-background">
         {viewMode === 'month' ? (
           <MonthView date={safeDate} setDate={setDate} getDailyLoad={getDailyLoad} />
