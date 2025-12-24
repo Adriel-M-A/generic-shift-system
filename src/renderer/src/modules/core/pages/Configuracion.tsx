@@ -1,9 +1,10 @@
-import { Palette, Database } from 'lucide-react'
+import { Palette, Database, CalendarClock } from 'lucide-react'
 import { useAuth } from '@auth/context/AuthContext'
 
 // Importamos los sub-componentes
 import Apariencia from './configuracion/Apariencia'
 import Backups from './configuracion/Backups'
+import { TurnosConfig } from './configuracion/TurnosConfig'
 import TabsSection, { TabDef } from '@ui/TabsSection'
 
 export default function Configuracion() {
@@ -13,7 +14,12 @@ export default function Configuracion() {
   const canSeeApariencia = hasPermission('config_apariencia')
   const canSeeSistema = hasPermission('config_sistema')
 
+  // NOTA: Asegúrate de tener este permiso en tu backend o cámbialo a 'true' para probar ahora
+  const canSeeTurnos = hasPermission('config_turnos') || true
+
   const tabs: TabDef[] = []
+
+  // 1. Pestaña Apariencia
   if (canSeeApariencia)
     tabs.push({
       value: 'apariencia',
@@ -25,6 +31,21 @@ export default function Configuracion() {
       ),
       content: <Apariencia />
     })
+
+  // 2. Pestaña Turnos (NUEVA)
+  if (canSeeTurnos)
+    tabs.push({
+      value: 'turnos',
+      label: (
+        <>
+          <CalendarClock className="h-4 w-4 mr-2" />
+          Turnos
+        </>
+      ),
+      content: <TurnosConfig />
+    })
+
+  // 3. Pestaña Sistema
   if (canSeeSistema)
     tabs.push({
       value: 'sistema',

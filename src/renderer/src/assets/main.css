@@ -25,6 +25,14 @@
   --color-destructive: hsl(0 84.2% 60.2%);
   --color-destructive-foreground: hsl(210 40% 98%);
 
+  /* --- COLORES DE CARGA (Heatmap Calendarios) --- */
+  /* Verde-500 (Baja carga / Disponibilidad) */
+  --color-load-low: hsl(142.1 76.2% 36.3%);
+  /* Amarillo-500 (Media carga / Ocupándose) */
+  --color-load-medium: hsl(45 93% 47%);
+  /* Rojo-500 (Alta carga / Lleno) */
+  --color-load-high: hsl(0 84.2% 60.2%);
+
   --color-border: hsl(220 13% 91%);
   --color-input: hsl(220 13% 91%);
 
@@ -62,6 +70,14 @@
     /* Colores Destructive Dark (rojo) */
     --color-destructive: hsl(0 55% 48%); /* Opción A: menos chillón y más legible */
     --color-destructive-foreground: hsl(0 0% 98%);
+
+    /* --- COLORES DE CARGA DARK --- */
+    /* Verde un poco más brillante para contraste oscuro */
+    --color-load-low: hsl(142 70% 50%);
+    /* Amarillo brillante */
+    --color-load-medium: hsl(48 96% 53%);
+    /* Rojo visible */
+    --color-load-high: hsl(0 72% 51%);
 
     --color-border: hsl(0 0% 13%);
     --color-input: hsl(0 0% 13%);
