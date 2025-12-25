@@ -197,7 +197,7 @@ export function TurnosConfig() {
             {/* Baja */}
             <div className="flex flex-col gap-3 p-4 rounded-lg border border-border/40 bg-card">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-green-500 ring-2 ring-green-500/30"></div>
+                <div className="h-3 w-3 rounded-full bg-load-low"></div>
                 <Label className="font-semibold text-sm">Demanda Baja</Label>
               </div>
               <div className="flex items-center gap-2">
@@ -223,7 +223,7 @@ export function TurnosConfig() {
             {/* Media */}
             <div className="flex flex-col gap-3 p-4 rounded-lg border border-border/40 bg-card">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-yellow-500 ring-2 ring-yellow-500/30"></div>
+                <div className="h-3 w-3 rounded-full bg-load-medium"></div>
                 <Label className="font-semibold text-sm">Demanda Media</Label>
               </div>
               <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export function TurnosConfig() {
             {/* Alta */}
             <div className="flex flex-col gap-3 p-4 rounded-lg border border-border/40 bg-card">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-red-500 ring-2 ring-red-500/30"></div>
+                <div className="h-3 w-3 rounded-full bg-load-high"></div>
                 <Label className="font-semibold text-sm">Demanda Alta</Label>
               </div>
               <div className="flex items-center gap-2">
