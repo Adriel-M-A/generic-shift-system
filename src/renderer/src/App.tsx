@@ -58,7 +58,7 @@ const RootRoutes = () => {
                 {FLAGS.ENABLE_AUTH && <Route path="/perfil" element={<Perfil />} />}
                 <Route
                   path="*"
-                  element={<div className="p-10 text-red-500">Página no encontrada</div>}
+                  element={<div className="text-red-500">Página no encontrada</div>}
                 />
               </Route>
             </Routes>

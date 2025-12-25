@@ -9,15 +9,13 @@ import { useShifts } from '../../hooks/useShifts'
 type MobileTab = 'calendar' | 'list'
 
 export function TurnosLayout() {
-  // Consumimos los datos directamente del contexto
   const { date, setDate, shifts, getDailyLoad, formatDateHeader, changeShiftStatus, addShift } =
     useShifts()
 
   const [mobileTab, setMobileTab] = useState<MobileTab>('calendar')
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-3">
-      {/* ... (La barra de botones móvil sigue igual) ... */}
+    <div className="flex flex-col gap-3 h-full">
       <div className="flex md:hidden bg-muted/50 p-1 rounded-lg shrink-0 border border-border/50">
         <Button
           variant={mobileTab === 'calendar' ? 'default' : 'ghost'}
@@ -37,7 +35,7 @@ export function TurnosLayout() {
         </Button>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
         <div
           className={cn(
             'lg:col-span-7 flex flex-col h-full min-h-0 overflow-hidden transition-all',

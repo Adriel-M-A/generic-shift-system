@@ -3,9 +3,11 @@ import { TurnosLayout } from '../components/layout/TurnosLayout'
 
 export function Turnos() {
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] gap-4 p-2 animate-in fade-in duration-500">
+    <div className="flex flex-col gap-4 animate-in fade-in duration-500 h-full">
       <ShiftHeader />
-      <TurnosLayout />
+      <div className="flex-1 min-h-0">
+        <TurnosLayout />
+      </div>
     </div>
   )
 }

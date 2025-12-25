@@ -15,10 +15,10 @@ import {
   AlertDialogTitle
 } from '@ui/alert-dialog'
 import { Check, Clock, Briefcase, CalendarCheck2, X, RotateCcw } from 'lucide-react'
-import { format } from 'date-fns' // <--- IMPORTANTE
+import { format } from 'date-fns'
 
 import { Turno, EstadoTurno } from '../types'
-import { NewShiftData } from '../context/ShiftContext' // Nota: importamos desde Context ahora
+import { NewShiftData } from '../context/ShiftContext'
 import { getStatusColor, getStatusLabel } from '../utils'
 import { cn } from '@lib/utils'
 import { ShiftForm } from './ShiftForm'
@@ -44,7 +44,6 @@ export function ShiftList({
     return shifts.find((s) => s.id === shiftToCancel)
   }, [shifts, shiftToCancel])
 
-  // --- FILTRADO REAL POR FECHA ---
   const filteredShifts = useMemo(() => {
     if (!date) return []
 
@@ -52,12 +51,7 @@ export function ShiftList({
 
     return shifts
       .filter((s) => {
-        // 1. Coincide con la fecha seleccionada
         const isSameDay = s.fecha === dateKey
-        // 2. No mostramos cancelados en la lista principal (opcional, según tu gusto)
-        // const isActive = s.estado !== 'cancelado'
-        // En tu código original mostrabas 'pendiente' o 'completado'.
-        // Vamos a mantener tu lógica original de estados + filtro de fecha:
         return (
           isSameDay &&
           (s.estado === 'pendiente' || s.estado === 'completado' || s.estado === 'en_curso')
@@ -73,14 +67,10 @@ export function ShiftList({
     }
   }
 
-  // ... (El resto del componente (Return, JSX) es idéntico al paso anterior, no cambia nada visualmente) ...
-  // Solo asegúrate de copiar el JSX del paso anterior si lo necesitas, pero la lógica importante está arriba.
-
   return (
     <>
-      <Card className="flex flex-col h-full border-border/50 shadow-sm overflow-hidden bg-muted/10">
+      <Card className="flex flex-col border-border/50 shadow-sm overflow-hidden bg-muted/10 h-full">
         <CardHeader className="pb-3 shrink-0 bg-card border-b z-10 flex flex-row items-center justify-between">
-          {/* ... Mismo contenido que antes ... */}
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarCheck2 className="h-5 w-5 text-primary" />
@@ -104,7 +94,6 @@ export function ShiftList({
                 </div>
               ) : (
                 filteredShifts.map((turno) => {
-                  // ... Mapeo idéntico al anterior ...
                   const isCompleted = turno.estado === 'completado'
                   return (
                     <div
@@ -193,7 +182,6 @@ export function ShiftList({
         </CardContent>
       </Card>
 
-      {/* El AlertDialog de cancelación sigue igual */}
       <AlertDialog open={!!shiftToCancel} onOpenChange={(open) => !open && setShiftToCancel(null)}>
         <AlertDialogContent className="sm:max-w-106.25">
           <AlertDialogHeader>

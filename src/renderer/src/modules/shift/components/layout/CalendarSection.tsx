@@ -38,14 +38,12 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
   const handleMonthDoubleClick = (monthIndex: number) => {
     const newDate = new Date(safeDate)
     newDate.setMonth(monthIndex)
-    // Opcional: Si quieres que al entrar al mes seleccione el día 1, descomenta esto:
-    // newDate.setDate(1)
     setDate(newDate)
     setViewMode('month')
   }
 
   return (
-    <Card className="h-full flex flex-col border-border/50 shadow-sm overflow-hidden">
+    <Card className="flex flex-col border-border/50 shadow-sm overflow-hidden h-full">
       <CardHeader className="relative h-14 flex flex-row items-center justify-between space-y-0 border-b bg-card z-10 px-4 py-0">
         <CardTitle className="text-lg flex items-center gap-2 text-primary/80">
           <CalendarIcon className="h-5 w-5" />

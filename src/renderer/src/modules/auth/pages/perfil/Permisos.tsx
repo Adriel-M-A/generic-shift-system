@@ -153,8 +153,7 @@ export function Permisos() {
     )
   }
 
-  if (loading)
-    return <div className="p-10 text-center text-muted-foreground">Cargando matriz...</div>
+  if (loading) return <div className="text-center text-muted-foreground">Cargando matriz...</div>
 
   return (
     <div className="space-y-6 pb-10">

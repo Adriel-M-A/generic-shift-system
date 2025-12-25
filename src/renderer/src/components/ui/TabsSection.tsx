@@ -27,7 +27,7 @@ export default function TabsSection({
   if (!defaultTab) {
     return (
       <div
-        className={`h-full flex flex-col items-center justify-center text-muted-foreground p-8 text-center ${className}`}
+        className={`h-full flex flex-col items-center justify-center text-muted-foreground text-center ${className}`}
       >
         <div className="h-12 w-12 mb-4 opacity-20" />
         <h2 className="text-xl font-bold">Acceso Restringido</h2>
@@ -37,9 +37,7 @@ export default function TabsSection({
   }
 
   return (
-    <div
-      className={`p-8 h-full flex flex-col space-y-6 overflow-hidden bg-background ${className}`}
-    >
+    <div className={`h-full flex flex-col space-y-6 overflow-hidden bg-background ${className}`}>
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
         {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}

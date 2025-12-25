@@ -9,7 +9,6 @@ export default function AppLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
-    // Usamos h-full para que ocupe el 100% del espacio que le da App.tsx
     <div className="flex h-full w-full overflow-hidden text-foreground">
       {/* --- MODO 1: DESKTOP (> 1024px) --- */}
       <Sidebar className="hidden lg:flex" collapsed={false} />
@@ -47,9 +46,10 @@ export default function AppLayout() {
           </Sheet>
         </header>
 
-        {/* CONTENIDO PRINCIPAL: Ocupa el resto del espacio disponible */}
-        <div className="flex-1 overflow-y-auto relative bg-background">
-          <Outlet />
+        <div className="flex-1 overflow-hidden relative bg-background flex flex-col">
+          <div className="h-full flex flex-col p-4 md:p-6 lg:p-8 min-h-0">
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>

@@ -21,9 +21,7 @@ export default function Perfil() {
 
   if (!defaultTab) {
     return (
-      <div className="p-10 text-center text-muted-foreground">
-        Acceso restringido a esta sección.
-      </div>
+      <div className="text-center text-muted-foreground">Acceso restringido a esta sección.</div>
     )
   }
 
