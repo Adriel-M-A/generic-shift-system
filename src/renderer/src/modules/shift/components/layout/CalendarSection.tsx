@@ -64,7 +64,7 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
               <ChevronLeft className="h-3.5 w-3.5 opacity-70 group-hover:opacity-100" />
             </Button>
 
-            <span className="text-sm font-bold px-3 tabular-nums text-center min-w-[3.5rem] select-none cursor-default text-foreground/90 group-hover:text-primary transition-colors">
+            <span className="text-sm font-bold px-3 tabular-nums text-center min-w-14 select-none cursor-default text-foreground/90 group-hover:text-primary transition-colors">
               {safeDate.getFullYear()}
             </span>
 
@@ -110,7 +110,7 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 p-0 min-h-0 relative bg-background">
+      <CardContent className="flex-1 p-0 min-h-0 relative bg-background overflow-hidden">
         {viewMode === 'month' ? (
           <MonthView date={safeDate} setDate={setDate} getDailyLoad={getDailyLoad} />
         ) : (

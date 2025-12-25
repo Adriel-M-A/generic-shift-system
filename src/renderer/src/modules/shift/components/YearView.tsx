@@ -29,7 +29,7 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
   }
 
   return (
-    <div className="h-full overflow-y-auto pr-2 pb-2 pt-2 scroll-smooth">
+    <div className="h-full overflow-y-auto pb-2 pt-2 pl-2.5">
       <div
         className={cn(
           'grid gap-3',

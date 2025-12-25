@@ -76,7 +76,7 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
   }
 
   return (
-    <div className="flex flex-col bg-card shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-card shadow-sm min-h-0">
       {/* Header superior */}
       <div className="flex items-center justify-between p-3 border-b bg-card shrink-0">
         <h2 className="text-lg font-semibold capitalize pl-1">{monthName}</h2>
