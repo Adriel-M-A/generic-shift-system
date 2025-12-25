@@ -15,6 +15,7 @@ import { UIProvider, useUI } from '@core/context/UIContext'
 import { Turnos } from './modules/shift/pages/Turnos'
 // 1. IMPORTAMOS EL PROVIDER
 import { ShiftProvider } from './modules/shift/context/ShiftContext'
+import { Servicios } from './modules/shift/pages/Servicios'
 
 const BlockOverlay = () => {
   const { isBlocked, blockMessage } = useUI()
@@ -54,6 +55,7 @@ const RootRoutes = () => {
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Navigate to="/turnos" replace />} />
                 <Route path="/turnos" element={<Turnos />} />
+                <Route path="/servicios" element={<Servicios />} />
                 <Route path="/configuracion" element={<Configuracion />} />
                 {FLAGS.ENABLE_AUTH && <Route path="/perfil" element={<Perfil />} />}
                 <Route
