@@ -33,6 +33,14 @@ interface ShiftAPI {
   updateStatus: (params: { id: number; estado: string }) => Promise<any>
 }
 
+interface ServicesAPI {
+  getAll: () => Promise<any[]>
+  create: (nombre: string) => Promise<any>
+  update: (id: number, nombre: string) => Promise<void>
+  toggle: (id: number) => Promise<number>
+  delete: (id: number) => Promise<void>
+}
+
 interface SettingsAPI {
   getAll: () => Promise<Record<string, string>>
   setMany: (settings: Record<string, string>) => Promise<any>
@@ -43,6 +51,7 @@ interface API {
   auth: AuthAPI
   roles: RolesAPI
   shift: ShiftAPI
+  services: ServicesAPI
   settings: SettingsAPI
 }
 

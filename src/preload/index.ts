@@ -29,6 +29,14 @@ const api = {
     getMonthlyLoad: (params) => ipcRenderer.invoke('shift:getMonthlyLoad', params),
     updateStatus: (params) => ipcRenderer.invoke('shift:updateStatus', params)
   },
+  services: {
+    getAll: () => ipcRenderer.invoke('services:get-all'),
+    create: (nombre) => ipcRenderer.invoke('services:create', nombre),
+    update: (id, nombre) => ipcRenderer.invoke('services:update', { id, nombre }),
+    toggle: (id) => ipcRenderer.invoke('services:toggle', id),
+    delete: (id) => ipcRenderer.invoke('services:delete', id)
+  },
+  // ------------------------------
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
     setMany: (settings) => ipcRenderer.invoke('settings:setMany', settings)
