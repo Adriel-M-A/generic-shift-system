@@ -65,18 +65,22 @@ export function ShiftSection({
   return (
     <>
       <Card className="flex flex-col border-border/50 shadow-sm overflow-hidden bg-muted/10 h-full">
-        <CardHeader className="pb-3 shrink-0 bg-card border-b z-10 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarCheck2 className="h-5 w-5 text-primary" />
-              Agenda del Día
-            </CardTitle>
-            <p className="text-sm text-muted-foreground capitalize font-medium">
-              {date ? formatDateHeader(date) : 'Seleccione una fecha'}
-            </p>
-          </div>
+        <CardHeader className="pb-3 shrink-0 bg-card border-b z-10">
+          <div className="flex flex-wrap items-center justify-between gap-y-3 gap-x-4">
+            <div className="space-y-1 min-w-0">
+              <CardTitle className="text-lg flex items-center gap-2 whitespace-nowrap">
+                <CalendarCheck2 className="h-5 w-5 text-primary shrink-0" />
+                Agenda del Día
+              </CardTitle>
+              <p className="text-sm text-muted-foreground capitalize font-medium truncate">
+                {date ? formatDateHeader(date) : 'Seleccione una fecha'}
+              </p>
+            </div>
 
-          <ShiftForm currentDate={date} onSave={addShift} formatDateHeader={formatDateHeader} />
+            <div className="shrink-0">
+              <ShiftForm currentDate={date} onSave={addShift} formatDateHeader={formatDateHeader} />
+            </div>
+          </div>
         </CardHeader>
 
         <CardContent className="flex-1 p-0 min-h-0 overflow-hidden relative">
