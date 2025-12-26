@@ -83,6 +83,16 @@ export class ShiftService {
     return stmt.all(`${monthStr}-%`)
   }
 
+  getByYear(year: number) {
+    const stmt = db.prepare(`
+      SELECT fecha, count(*) as count 
+      FROM turnos 
+      WHERE fecha LIKE ? AND estado != 'cancelado'
+      GROUP BY fecha
+    `)
+    return stmt.all(`${year}-%`)
+  }
+
   updateStatus(id: number, estado: string) {
     const stmt = db.prepare(`UPDATE turnos SET estado = ? WHERE id = ?`)
     return stmt.run(estado, id)

@@ -27,6 +27,7 @@ const api = {
     create: (data) => ipcRenderer.invoke('shift:create', data),
     getByDate: (date) => ipcRenderer.invoke('shift:getByDate', date),
     getMonthlyLoad: (params) => ipcRenderer.invoke('shift:getMonthlyLoad', params),
+    getYearlyLoad: (year) => ipcRenderer.invoke('shift:getYearlyLoad', year),
     updateStatus: (params) => ipcRenderer.invoke('shift:updateStatus', params)
   },
   services: {

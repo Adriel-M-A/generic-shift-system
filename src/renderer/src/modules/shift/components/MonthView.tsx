@@ -4,8 +4,8 @@ import { cn } from '@lib/utils'
 import { useShifts } from '../hooks/useShifts'
 
 interface MonthViewProps {
-  currentDate: Date // Renombrado a currentDate para consistencia, o puedes dejarlo 'date' si prefieres
-  onDateChange: (date: Date) => void // Renombrado para consistencia con CalendarSection
+  currentDate: Date
+  onDateChange: (date: Date) => void
 }
 
 export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
@@ -34,7 +34,6 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
     const year = currentDate.getFullYear()
     const month = currentDate.getMonth()
     const daysInMonth = new Date(year, month + 1, 0).getDate()
-
     const startDay = new Date(year, month, 1).getDay()
 
     let startDayIndex = startDay
@@ -55,12 +54,13 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
     return days
   }, [currentDate, config.startOfWeek])
 
-  // Lógica de colores adaptada a Tailwind estándar para que funcione ya mismo
+  // --- CORRECCIÓN: Usando tus variables de main.css ---
   const getLoadColor = (load: number) => {
     const { low, medium } = config.thresholds
-    if (load > medium) return 'bg-rose-500 text-white' // Antes bg-load-high
-    if (load > low) return 'bg-amber-500 text-white' // Antes bg-load-medium
-    if (load > 0) return 'bg-emerald-500 text-white' // Antes bg-load-low
+    // Nota: Tailwind v4 mapea automáticamente --color-load-high a bg-load-high
+    if (load > medium) return 'bg-load-high text-white'
+    if (load > low) return 'bg-load-medium text-stone-900' // Texto oscuro para contraste con amarillo
+    if (load > 0) return 'bg-load-low text-white'
     return 'bg-transparent'
   }
 
@@ -75,7 +75,7 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
   return (
     <div className="flex flex-col h-full bg-card shadow-sm min-h-0">
       {/* Header superior */}
-      <div className="flex items-center justify-between p-2 border-b bg-card shrink-0">
+      <div className="flex items-center justify-between p-3 border-b bg-card shrink-0">
         <h2 className="text-lg font-semibold capitalize pl-1">{monthName}</h2>
 
         <div className="flex items-center gap-1">
@@ -147,7 +147,7 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
                     </span>
                   </div>
 
-                  {/* TEXTO DE TURNOS */}
+                  {/* Texto de cantidad de turnos */}
                   {load > 0 && (
                     <div className="mt-auto w-full text-right hidden lg:block pb-1">
                       <span className="text-[10px] font-medium block truncate text-foreground/70">
@@ -156,12 +156,12 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
                     </div>
                   )}
 
-                  {/* BARRA INFERIOR DE CARGA */}
+                  {/* BARRA INFERIOR DE CARGA (Usando tus colores) */}
                   {load > 0 && (
                     <div
                       className={cn(
                         'absolute bottom-0 left-0 right-0 h-1 opacity-60',
-                        getLoadColor(load)
+                        getLoadColor(load).split(' ')[0] // Solo tomamos la clase de background (ej: bg-load-high)
                       )}
                     />
                   )}

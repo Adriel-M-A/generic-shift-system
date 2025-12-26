@@ -64,6 +64,7 @@ interface ShiftAPI {
 
   getByDate: (date: string) => Promise<any[]>
   getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
+  getYearlyLoad: (year: number) => Promise<any[]>
   updateStatus: (params: { id: number; estado: string }) => Promise<any>
 }
 

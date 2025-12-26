@@ -18,11 +18,12 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
       ? ['L', 'M', 'X', 'J', 'V', 'S', 'D']
       : ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
+  // --- CORRECCIÓN: Usando tus variables de main.css ---
   const getLoadColor = (load: number) => {
     const { low, medium } = config.thresholds
-    if (load > medium) return 'bg-rose-500' // Alta
-    if (load > low) return 'bg-amber-500' // Media
-    if (load > 0) return 'bg-emerald-500' // Baja
+    if (load > medium) return 'bg-load-high' // Rojo
+    if (load > low) return 'bg-load-medium' // Amarillo
+    if (load > 0) return 'bg-load-low' // Azul
     return 'bg-transparent'
   }
 
@@ -103,6 +104,7 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
                     >
                       <span className="text-[10px] leading-none z-10">{day}</span>
 
+                      {/* Indicador de carga usando tus colores */}
                       {load > 0 && (
                         <div
                           className={cn(

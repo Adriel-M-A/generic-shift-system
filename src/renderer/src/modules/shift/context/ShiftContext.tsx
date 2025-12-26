@@ -9,7 +9,7 @@ export interface NewShiftData {
   servicio: string
   hora: string
   fecha?: string
-  customerId?: number // <--- Agregado
+  customerId?: number
 }
 
 const DEFAULT_CONFIG: ShiftConfig = {
@@ -25,19 +25,19 @@ const DEFAULT_CONFIG: ShiftConfig = {
 
 export interface ShiftContextType {
   // Estado
-  currentDate: Date // Renombrado de 'date' a 'currentDate'
+  currentDate: Date
   setCurrentDate: (date: Date) => void
   viewMode: ViewMode
   setViewMode: (mode: ViewMode) => void
   shifts: Turno[]
-  loading: boolean // <--- Agregado
+  loading: boolean
   stats: ShiftStats
   config: ShiftConfig
 
   // Acciones
-  addShift: (data: NewShiftData) => Promise<boolean> // Ahora devuelve boolean
+  addShift: (data: NewShiftData) => Promise<boolean>
   changeShiftStatus: (id: number, status: EstadoTurno) => Promise<void>
-  refreshShifts: () => Promise<void> // <--- Agregado
+  refreshShifts: () => Promise<void>
   updateConfig: (newConfig: Partial<ShiftConfig>) => Promise<void>
 
   // Helpers
@@ -48,14 +48,17 @@ export interface ShiftContextType {
 export const ShiftContext = createContext<ShiftContextType | undefined>(undefined)
 
 export function ShiftProvider({ children }: { children: ReactNode }) {
-  const [currentDate, setCurrentDate] = useState<Date>(new Date()) // Inicializado siempre con fecha
+  const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [shifts, setShifts] = useState<Turno[]>([])
   const [loading, setLoading] = useState(false)
-  const [monthlyLoad, setMonthlyLoad] = useState<Record<string, number>>({})
+
+  // CAMBIO: Ahora almacenamos la carga de TODO el año
+  const [workloadMap, setWorkloadMap] = useState<Record<string, number>>({})
+
   const [config, setConfig] = useState<ShiftConfig>(DEFAULT_CONFIG)
 
-  // 1. CARGAR CONFIGURACIÓN
+  // 1. CARGAR CONFIGURACIÓN AL INICIO
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -79,7 +82,7 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
     loadSettings()
   }, [])
 
-  // 2. FUNCIONES DE CARGA (FETCH)
+  // 2. OBTENER TURNOS DEL DÍA SELECCIONADO
   const fetchDailyShifts = useCallback(async () => {
     if (!currentDate) return
     try {
@@ -94,31 +97,39 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
     }
   }, [currentDate])
 
-  const fetchMonthlyLoad = useCallback(async () => {
+  // 3. OBTENER CARGA DE TRABAJO DE TODO EL AÑO (NUEVO)
+  // Se ejecuta solo cuando cambia el AÑO de currentDate
+  const fetchYearlyLoad = useCallback(async () => {
     if (!currentDate) return
     try {
       const year = currentDate.getFullYear()
-      const month = currentDate.getMonth() + 1
-      const data = await window.api.shift.getMonthlyLoad({ year, month })
+      // Usamos la nueva API getYearlyLoad que creamos en el backend
+      const data = await window.api.shift.getYearlyLoad(year)
+
       const loadMap: Record<string, number> = {}
       data.forEach((item: any) => {
         loadMap[item.fecha] = item.count
       })
-      setMonthlyLoad(loadMap)
+      setWorkloadMap(loadMap)
     } catch (error) {
-      console.error(error)
+      console.error('Error cargando heatmap anual:', error)
     }
-  }, [currentDate?.getMonth(), currentDate?.getFullYear()])
+  }, [currentDate.getFullYear()]) // Dependencia: solo el año
 
-  // Función pública para recargar todo
+  // Función pública para refrescar datos
   const refreshShifts = async () => {
-    await Promise.all([fetchDailyShifts(), fetchMonthlyLoad()])
+    // Ejecutamos ambas en paralelo para velocidad
+    await Promise.all([fetchDailyShifts(), fetchYearlyLoad()])
   }
 
-  // Efecto principal de carga al cambiar fecha
+  // Efecto principal: Recargar cuando cambia la fecha o el año
   useEffect(() => {
-    refreshShifts()
-  }, [fetchDailyShifts, fetchMonthlyLoad])
+    // fetchDailyShifts tiene dependencia 'currentDate' completa
+    fetchDailyShifts()
+
+    // fetchYearlyLoad tiene dependencia 'year', así que solo se dispara si cambias de año
+    fetchYearlyLoad()
+  }, [fetchDailyShifts, fetchYearlyLoad])
 
   // --- ACCIONES ---
 
@@ -133,13 +144,14 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
       return true
     } catch (error) {
       console.error(error)
-      throw error // Lanzamos el error para que el componente lo maneje (toast)
+      throw error
     }
   }
 
   const changeShiftStatus = async (id: number, newStatus: EstadoTurno) => {
     try {
       await window.api.shift.updateStatus({ id, estado: newStatus })
+      // Al cambiar estado (ej. cancelar), necesitamos actualizar el conteo visual
       await refreshShifts()
     } catch (error) {
       console.error(error)
@@ -173,15 +185,17 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
   }
 
   // --- COMPUTADOS ---
+
   const stats: ShiftStats = {
     total: shifts.length,
     pendientes: shifts.filter((t) => t.estado === 'pendiente' || t.estado === 'en_curso').length,
     completados: shifts.filter((t) => t.estado === 'completado').length
   }
 
+  // Este helper ahora busca en el mapa anual
   const getDailyLoad = (d: Date) => {
     const dateKey = format(d, 'yyyy-MM-dd')
-    return monthlyLoad[dateKey] || 0
+    return workloadMap[dateKey] || 0
   }
 
   return (
