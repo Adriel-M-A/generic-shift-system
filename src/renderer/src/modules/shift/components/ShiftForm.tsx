@@ -17,20 +17,6 @@ import { TimePicker } from '@ui/time-picker'
 import { useShifts, NewShiftData } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
 
-const SERVICIOS_SUGERIDOS = [
-  'Corte de Pelo',
-  'Corte y Barba',
-  'Coloración',
-  'Alisado',
-  'Tratamiento',
-  'Peinado',
-  'Manicura',
-  'Pedicura',
-  'Masaje',
-  'Limpieza Facial',
-  'Consultoría'
-]
-
 interface ShiftFormProps {
   currentDate: Date | undefined
   onSave: (data: NewShiftData) => void
@@ -46,15 +32,38 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
   const serviceWrapperRef = useRef<HTMLDivElement>(null)
 
   // 3. INICIALIZAMOS CON LA HORA DE APERTURA REAL
-  // Usamos un estado que se actualiza si cambia la config
   const [time, setTime] = useState(config.openingTime || '09:00')
 
-  // Efecto para actualizar la hora por defecto si cambia la config (ej: carga la BD)
+  // --- NUEVO: Estado para Servicios Dinámicos ---
+  const [availableServices, setAvailableServices] = useState<string[]>([])
+
+  // Efecto para actualizar la hora por defecto si cambia la config
   useEffect(() => {
     if (config.openingTime) {
       setTime(config.openingTime)
     }
   }, [config.openingTime])
+
+  // --- NUEVO: Cargar servicios reales al abrir el modal ---
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        const allServices = await window.api.services.getAll()
+        // Filtramos solo los activos y mapeamos a string[] para mantener compatibilidad
+        const activeServiceNames = allServices
+          .filter((s: any) => s.activo === 1)
+          .map((s: any) => s.nombre)
+
+        setAvailableServices(activeServiceNames)
+      } catch (error) {
+        console.error('Error cargando servicios:', error)
+      }
+    }
+
+    if (open) {
+      fetchServices()
+    }
+  }, [open])
 
   const [formData, setFormData] = useState<{ cliente: string; servicio: string }>({
     cliente: '',
@@ -73,11 +82,12 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isServiceOpen])
 
+  // Usamos availableServices en lugar de la constante
   const filteredServices = useMemo(() => {
-    return SERVICIOS_SUGERIDOS.filter((s) =>
+    return availableServices.filter((s) =>
       s.toLowerCase().includes(formData.servicio.toLowerCase())
     )
-  }, [formData.servicio])
+  }, [formData.servicio, availableServices])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,9 +137,9 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
               <TimePicker
                 value={time}
                 onChange={setTime}
-                step={config.interval} // Frecuencia real (ej: 30 min)
-                minTime={config.openingTime} // Apertura real (ej: 10:00)
-                maxTime={config.closingTime} // Cierre real (ej: 20:00)
+                step={config.interval}
+                minTime={config.openingTime}
+                maxTime={config.closingTime}
               />
 
               <p className="text-[10px] text-muted-foreground">
@@ -138,7 +148,7 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
               </p>
             </div>
 
-            {/* 2. Selección de Servicio (Igual que antes) */}
+            {/* 2. Selección de Servicio (Dinámico) */}
             <div className="grid gap-2 relative z-50" ref={serviceWrapperRef}>
               <Label
                 htmlFor="servicio"
