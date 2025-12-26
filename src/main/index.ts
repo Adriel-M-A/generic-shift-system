@@ -6,6 +6,7 @@ import icon from '../../resources/icon.png?asset'
 import { getDB } from './core/database'
 import { runMigrations } from './core/migrations'
 import { setupBackupSystem } from './core/backup.ipc'
+import { setupWindowIPC } from './core/window.ipc' // <--- 1. IMPORTAR ESTO
 
 // Importar Módulos
 import { AuthModule } from './modules/auth'
@@ -20,7 +21,7 @@ function createWindow(): void {
     height: 800,
     show: false,
     autoHideMenuBar: true,
-    frame: false,
+    frame: false, // Importante: frame false para que tu TitleBar funcione
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -40,11 +41,8 @@ function createWindow(): void {
 
   // --- INICIALIZACIÓN ---
   const db = getDB()
-
-  // 1. Configurar DB
   runMigrations(db)
 
-  // 2. Inicializar Módulos
   console.log('Iniciando módulos...')
   AuthModule.init()
   ServicesModule.init()
@@ -52,8 +50,9 @@ function createWindow(): void {
   shiftModule.init()
   settingsModule.init()
 
-  // 3. Sistema de Backups (Pasamos la ventana)
+  // --- SISTEMAS CORE ---
   setupBackupSystem(mainWindow)
+  setupWindowIPC(mainWindow) // <--- 2. ACTIVAR LOS BOTONES AQUÍ
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
