@@ -2,6 +2,7 @@
 export const PERMISSIONS = {
   SHIFT: 'shift',
   SERVICES: 'services',
+  CUSTOMERS: 'customers',
   PERFIL: {
     ROOT: 'perfil',
     CUENTA: 'perfil_cuenta',

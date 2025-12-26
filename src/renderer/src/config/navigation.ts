@@ -1,5 +1,4 @@
 import {
-  LayoutDashboard,
   Settings,
   User,
   Palette,
@@ -7,8 +6,8 @@ import {
   Shield,
   Users,
   KeyRound,
-  CalendarClock, // Icono para Turnos
-  Tags // Icono para Servicios
+  CalendarClock,
+  Tags
 } from 'lucide-react'
 
 // IMPORTAMOS DESDE SHARED
@@ -33,6 +32,15 @@ export const APP_NAVIGATION = [
     label: 'Servicios',
     path: '/servicios',
     icon: Tags,
+    type: 'item',
+    hiddenInSidebar: false
+  },
+  // --- CLIENTES (CUSTOMERS) ---
+  {
+    id: PERMISSIONS.CUSTOMERS,
+    label: 'Clientes',
+    path: '/clientes',
+    icon: Users,
     type: 'item',
     hiddenInSidebar: false
   },
