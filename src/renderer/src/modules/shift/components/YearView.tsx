@@ -1,6 +1,5 @@
 import { useShifts } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
-import { useMemo } from 'react' // Agregamos useMemo para optimizar si quieres, o lo dejamos directo
 
 interface YearViewProps {
   year: number
@@ -10,21 +9,20 @@ interface YearViewProps {
 }
 
 export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }: YearViewProps) {
-  const { getDailyLoad, config } = useShifts() // <--- Traemos config
+  const { getDailyLoad, config } = useShifts()
 
   const months = Array.from({ length: 12 }, (_, i) => i)
 
-  // Ajuste dinámico de encabezados de semana
   const weekDays =
     config.startOfWeek === 'monday'
       ? ['L', 'M', 'X', 'J', 'V', 'S', 'D']
       : ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
-  // Ajuste de colores dinámico
   const getLoadColor = (load: number) => {
-    if (load > config.thresholds.medium) return 'bg-load-high'
-    if (load > config.thresholds.low) return 'bg-load-medium'
-    if (load > 0) return 'bg-load-low'
+    const { low, medium } = config.thresholds
+    if (load > medium) return 'bg-rose-500' // Alta
+    if (load > low) return 'bg-amber-500' // Media
+    if (load > 0) return 'bg-emerald-500' // Baja
     return 'bg-transparent'
   }
 
@@ -49,7 +47,6 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
 
           const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
 
-          // Ajuste de slots vacíos según inicio de semana
           let emptySlotsCount = startDay
           if (config.startOfWeek === 'monday') {
             emptySlotsCount = startDay === 0 ? 6 : startDay - 1

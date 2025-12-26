@@ -23,6 +23,7 @@ import { ShiftForm } from '../ShiftForm'
 interface ShiftSectionProps {
   date: Date | undefined
   shifts: Turno[]
+  loading?: boolean // Nuevo
   formatDateHeader: (d: Date) => string
   changeShiftStatus: (id: number, status: EstadoTurno) => void
   addShift: (data: NewShiftData) => void
@@ -31,6 +32,7 @@ interface ShiftSectionProps {
 export function ShiftSection({
   date,
   shifts,
+  loading,
   formatDateHeader,
   changeShiftStatus,
   addShift
@@ -42,7 +44,9 @@ export function ShiftSection({
     const dateKey = format(date, 'yyyy-MM-dd')
     return shifts
       .filter((s) => {
+        // Filtramos por fecha y que no esté cancelado (si esa es tu lógica deseada en la lista principal)
         const isSameDay = s.fecha === dateKey
+        // Nota: Ajusta esta lógica si quieres ver los cancelados en la lista principal
         return (
           isSameDay &&
           (s.estado === 'pendiente' || s.estado === 'completado' || s.estado === 'en_curso')
@@ -84,8 +88,10 @@ export function ShiftSection({
         </CardHeader>
 
         <CardContent className="flex-1 p-0 min-h-0 overflow-hidden relative">
+          {/* Pasamos loading a la lista */}
           <ShiftList
             shifts={filteredShifts}
+            loading={loading}
             onChangeStatus={changeShiftStatus}
             onRequestCancel={setShiftToCancel}
           />

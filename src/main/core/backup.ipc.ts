@@ -1,192 +1,59 @@
-import { ipcMain, app, dialog } from 'electron'
-import { join, basename } from 'path'
-import fs from 'fs'
-import Database from 'better-sqlite3'
-import { db, closeDB, dbPath } from './database'
+import { ipcMain, dialog, BrowserWindow, app } from 'electron'
+import { join } from 'path'
+import { existsSync } from 'fs'
+import { copyFileSync as fsCopy, statSync } from 'fs'
 
-const backupDir = join(app.getPath('userData'), 'backups')
-const configPath = join(app.getPath('userData'), 'backup-config.json')
+export function setupBackupSystem(mainWindow: BrowserWindow) {
+  const userDataPath = app.getPath('userData')
+  const dbPath = join(userDataPath, 'app.db')
 
-if (!fs.existsSync(backupDir)) {
-  fs.mkdirSync(backupDir)
-}
-
-function getAutoBackupConfig() {
-  try {
-    if (fs.existsSync(configPath)) {
-      const data = fs.readFileSync(configPath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (e) {
-    return { enabled: false }
-  }
-  return { enabled: false }
-}
-
-async function createBackupImpl(label?: string) {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const name = label ? `${label}_${timestamp}.backup` : `auto_${timestamp}.backup`
-  const dest = join(backupDir, name)
-
-  await db.backup(dest)
-
-  const files = fs
-    .readdirSync(backupDir)
-    .filter((f) => f.endsWith('.backup'))
-    .map((file) => ({
-      name: file,
-      time: fs.statSync(join(backupDir, file)).birthtime.getTime()
-    }))
-    .sort((a, b) => b.time - a.time)
-
-  if (files.length > 10) {
-    const toDelete = files.slice(10)
-    toDelete.forEach((f) => {
-      try {
-        fs.unlinkSync(join(backupDir, f.name))
-      } catch (e) {
-        console.error(e)
-      }
-    })
-  }
-}
-
-export async function runAutoBackup() {
-  const config = getAutoBackupConfig()
-  if (config.enabled) {
-    console.log('Ejecutando backup automático al cerrar...')
+  ipcMain.handle('backup:create', async () => {
     try {
-      await createBackupImpl('auto_exit')
-      console.log('Backup automático completado.')
-    } catch (error) {
-      console.error('Error en backup automático:', error)
-    }
-  }
-}
-
-export function registerBackupHandlers() {
-  ipcMain.handle('backup:list', async () => {
-    try {
-      const files = fs
-        .readdirSync(backupDir)
-        .filter((f) => f.endsWith('.backup'))
-        .map((file) => {
-          const stat = fs.statSync(join(backupDir, file))
-          return {
-            name: file,
-            size: stat.size,
-            createdAt: stat.birthtime
-          }
-        })
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-
-      return { success: true, backups: files, path: backupDir }
-    } catch (error) {
-      return { success: false, message: 'Error leyendo backups' }
-    }
-  })
-
-  ipcMain.handle('backup:create', async (_, label) => {
-    try {
-      await createBackupImpl(label)
-      return { success: true }
-    } catch (error) {
-      console.error(error)
-      return { success: false, message: 'Error creando respaldo' }
-    }
-  })
-
-  ipcMain.handle('backup:restore', async (_, filename) => {
-    try {
-      const source = join(backupDir, filename)
-
-      try {
-        const checkDb = new Database(source, { readonly: true })
-        checkDb.pragma('quick_check')
-        checkDb.close()
-      } catch (e) {
-        return { success: false, message: 'El archivo de respaldo está corrupto' }
-      }
-
-      closeDB()
-
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      fs.copyFileSync(source, dbPath)
-
-      app.relaunch()
-      app.exit(0)
-
-      return { success: true }
-    } catch (error) {
-      console.error('Error restaurando:', error)
-      return { success: false, message: 'Falló la restauración' }
-    }
-  })
-
-  ipcMain.handle('backup:delete', async (_, filename) => {
-    try {
-      fs.unlinkSync(join(backupDir, filename))
-      return { success: true }
-    } catch (error) {
-      return { success: false }
-    }
-  })
-
-  ipcMain.handle('backup:export', async (_, filename) => {
-    try {
-      const source = join(backupDir, filename)
-
-      const { filePath } = await dialog.showSaveDialog({
-        title: 'Exportar Copia de Seguridad',
-        defaultPath: filename,
-        filters: [{ name: 'Backup Database', extensions: ['backup'] }]
+      const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+        title: 'Guardar Copia de Seguridad',
+        defaultPath: `backup-${new Date().toISOString().split('T')[0]}.db`,
+        filters: [{ name: 'Database', extensions: ['db'] }]
       })
 
-      if (filePath) {
-        fs.copyFileSync(source, filePath)
+      if (canceled || !filePath) return { success: false }
+
+      if (existsSync(dbPath)) {
+        fsCopy(dbPath, filePath)
         return { success: true, path: filePath }
       }
-      return { success: false, message: 'Cancelado' }
-    } catch (error) {
+      return { success: false, error: 'No se encontró la base de datos' }
+    } catch (error: any) {
       console.error(error)
-      return { success: false, message: 'Error al exportar archivo' }
+      return { success: false, error: error.message }
     }
   })
 
-  ipcMain.handle('backup:import', async () => {
+  ipcMain.handle('backup:restore', async () => {
     try {
-      const result = await dialog.showOpenDialog({
-        title: 'Importar Copia de Seguridad',
-        filters: [{ name: 'Backup Database', extensions: ['backup'] }],
+      const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+        title: 'Seleccionar Copia de Seguridad',
+        filters: [{ name: 'Database', extensions: ['db'] }],
         properties: ['openFile']
       })
 
-      if (result.canceled || result.filePaths.length === 0) {
-        return { success: false, message: 'Cancelado' }
-      }
+      if (canceled || filePaths.length === 0) return { success: false }
 
-      const sourcePath = result.filePaths[0]
-      const filename = basename(sourcePath)
-      const destPath = join(backupDir, filename)
+      const backupPath = filePaths[0]
 
-      fs.copyFileSync(sourcePath, destPath)
+      // Validación simple de tamaño
+      const stats = statSync(backupPath)
+      if (stats.size === 0) return { success: false, error: 'El archivo está vacío' }
+
+      // Reemplazamos la DB actual (requiere reinicio idealmente)
+      fsCopy(backupPath, dbPath)
+
+      // Forzamos recarga de la ventana para tomar los nuevos datos
+      mainWindow.reload()
+
       return { success: true }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      return { success: false, message: 'Error al importar archivo' }
-    }
-  })
-
-  ipcMain.handle('backup:get-config', () => {
-    return getAutoBackupConfig()
-  })
-
-  ipcMain.handle('backup:toggle-auto', (_, enabled) => {
-    try {
-      fs.writeFileSync(configPath, JSON.stringify({ enabled }))
-      return { success: true }
-    } catch (error) {
-      return { success: false }
+      return { success: false, error: error.message }
     }
   })
 }

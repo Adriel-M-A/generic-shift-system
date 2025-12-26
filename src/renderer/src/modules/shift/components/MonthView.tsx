@@ -4,17 +4,12 @@ import { cn } from '@lib/utils'
 import { useShifts } from '../hooks/useShifts'
 
 interface MonthViewProps {
-  date: Date
-  setDate: (date: Date) => void
-  getDailyLoad: (date: Date) => number
+  currentDate: Date // Renombrado a currentDate para consistencia, o puedes dejarlo 'date' si prefieres
+  onDateChange: (date: Date) => void // Renombrado para consistencia con CalendarSection
 }
 
-interface CalendarSlot {
-  day: number | null
-}
-
-export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
-  const { config } = useShifts()
+export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
+  const { config, getDailyLoad } = useShifts()
 
   const weekDays = useMemo(() => {
     return config.startOfWeek === 'monday'
@@ -22,22 +17,22 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
       : ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
   }, [config.startOfWeek])
 
-  const monthName = date.toLocaleDateString('es-ES', {
+  const monthName = currentDate.toLocaleDateString('es-ES', {
     month: 'long',
     year: 'numeric'
   })
 
   const handlePrevMonth = () => {
-    setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1))
+    onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
   }
 
   const handleNextMonth = () => {
-    setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1))
+    onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
   }
 
   const calendarData = useMemo(() => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth()
     const daysInMonth = new Date(year, month + 1, 0).getDate()
 
     const startDay = new Date(year, month, 1).getDay()
@@ -47,7 +42,7 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
       startDayIndex = startDay === 0 ? 6 : startDay - 1
     }
 
-    const days: CalendarSlot[] = []
+    const days: { day: number | null }[] = []
 
     for (let i = 0; i < startDayIndex; i++) {
       days.push({ day: null })
@@ -58,12 +53,14 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
     }
 
     return days
-  }, [date, config.startOfWeek])
+  }, [currentDate, config.startOfWeek])
 
+  // Lógica de colores adaptada a Tailwind estándar para que funcione ya mismo
   const getLoadColor = (load: number) => {
-    if (load > config.thresholds.medium) return 'bg-load-high text-white'
-    if (load > config.thresholds.low) return 'bg-load-medium text-stone-900'
-    if (load > 0) return 'bg-load-low text-white'
+    const { low, medium } = config.thresholds
+    if (load > medium) return 'bg-rose-500 text-white' // Antes bg-load-high
+    if (load > low) return 'bg-amber-500 text-white' // Antes bg-load-medium
+    if (load > 0) return 'bg-emerald-500 text-white' // Antes bg-load-low
     return 'bg-transparent'
   }
 
@@ -78,7 +75,7 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
   return (
     <div className="flex flex-col h-full bg-card shadow-sm min-h-0">
       {/* Header superior */}
-      <div className="flex items-center justify-between p-3 border-b bg-card shrink-0">
+      <div className="flex items-center justify-between p-2 border-b bg-card shrink-0">
         <h2 className="text-lg font-semibold capitalize pl-1">{monthName}</h2>
 
         <div className="flex items-center gap-1">
@@ -120,16 +117,20 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
                 return <div key={`empty-${index}`} className="aspect-square" />
               }
 
-              const currentDayDate = new Date(date.getFullYear(), date.getMonth(), slot.day)
-
+              const currentDayDate = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                slot.day
+              )
               const load = getDailyLoad(currentDayDate)
-              const isSelected = date.toDateString() === currentDayDate.toDateString()
+
+              const isSelected = currentDate.toDateString() === currentDayDate.toDateString()
               const isToday = new Date().toDateString() === currentDayDate.toDateString()
 
               return (
                 <button
                   key={slot.day}
-                  onClick={() => setDate(currentDayDate)}
+                  onClick={() => onDateChange(currentDayDate)}
                   className={cn(
                     'aspect-square rounded-md p-1 sm:p-2',
                     getDayClasses(isSelected, isToday)
@@ -146,7 +147,7 @@ export function MonthView({ date, setDate, getDailyLoad }: MonthViewProps) {
                     </span>
                   </div>
 
-                  {/* TEXTO DE TURNOS (esto estaba y se mantiene) */}
+                  {/* TEXTO DE TURNOS */}
                   {load > 0 && (
                     <div className="mt-auto w-full text-right hidden lg:block pb-1">
                       <span className="text-[10px] font-medium block truncate text-foreground/70">

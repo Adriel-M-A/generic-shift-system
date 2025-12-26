@@ -8,24 +8,68 @@ export interface ShiftDB {
   servicio: string
   profesional: string
   estado: string
+  customer_id?: number
 }
 
 export class ShiftService {
-  create(data: Omit<ShiftDB, 'id' | 'estado' | 'profesional'>) {
+  create(data: {
+    fecha: string
+    hora: string
+    cliente: string
+    servicio: string
+    customerId?: number
+  }) {
     const stmt = db.prepare(`
-      INSERT INTO turnos (fecha, hora, cliente, servicio, profesional, estado)
-      VALUES (@fecha, @hora, @cliente, @servicio, 'Staff', 'pendiente')
+      INSERT INTO turnos (fecha, hora, cliente, servicio, customer_id, profesional, estado)
+      VALUES (@fecha, @hora, @cliente, @servicio, @customerId, 'Staff', 'pendiente')
     `)
-    return stmt.run(data)
+
+    return stmt.run({
+      fecha: data.fecha,
+      hora: data.hora,
+      cliente: data.cliente,
+      servicio: data.servicio,
+      customerId: data.customerId || null
+    })
   }
 
   getByDate(fecha: string) {
     const stmt = db.prepare(`
-      SELECT * FROM turnos 
-      WHERE fecha = ? 
-      ORDER BY hora ASC
+      SELECT 
+        t.id, 
+        t.fecha, 
+        t.hora, 
+        t.servicio, 
+        t.estado,
+        t.customer_id,
+        COALESCE(c.nombre || ' ' || c.apellido, t.cliente) as cliente,
+        c.documento,
+        c.telefono, 
+        c.email
+      FROM turnos t
+      LEFT JOIN customers c ON t.customer_id = c.id
+      WHERE t.fecha = ? 
+      ORDER BY t.hora ASC
     `)
-    return stmt.all(fecha) as ShiftDB[]
+
+    const results = stmt.all(fecha)
+
+    return results.map((row: any) => ({
+      id: row.id,
+      fecha: row.fecha,
+      hora: row.hora,
+      cliente: row.cliente,
+      servicio: row.servicio,
+      estado: row.estado,
+      customerId: row.customer_id,
+      customerData: row.customer_id
+        ? {
+            documento: row.documento,
+            telefono: row.telefono,
+            email: row.email
+          }
+        : null
+    }))
   }
 
   getByMonth(year: number, month: number) {

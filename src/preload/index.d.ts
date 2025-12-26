@@ -1,5 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
+// --- Tipos Compartidos ---
+
 interface Customer {
   id: number
   documento: string
@@ -16,6 +18,14 @@ interface CustomerInput {
   telefono?: string
   email?: string
 }
+
+interface Service {
+  id: number
+  nombre: string
+  activo: number // 1 o 0
+}
+
+// --- Interfaces de API ---
 
 interface WindowAPI {
   minimize: () => void
@@ -44,14 +54,21 @@ interface RolesAPI {
 }
 
 interface ShiftAPI {
-  create: (data: { fecha: string; hora: string; cliente: string; servicio: string }) => Promise<any>
+  create: (data: {
+    fecha: string
+    hora: string
+    cliente: string
+    servicio: string
+    customerId?: number
+  }) => Promise<any>
+
   getByDate: (date: string) => Promise<any[]>
   getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
   updateStatus: (params: { id: number; estado: string }) => Promise<any>
 }
 
 interface ServicesAPI {
-  getAll: () => Promise<any[]>
+  getAll: () => Promise<Service[]>
   create: (nombre: string) => Promise<any>
   update: (id: number, nombre: string) => Promise<void>
   toggle: (id: number) => Promise<number>
@@ -69,6 +86,8 @@ interface CustomersAPI {
   update: (id: number | string, data: CustomerInput) => Promise<boolean>
   delete: (id: number | string) => Promise<void>
 }
+
+// --- API Principal ---
 
 interface API {
   window: WindowAPI

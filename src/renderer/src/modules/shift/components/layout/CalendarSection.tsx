@@ -35,6 +35,7 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
     setDate(newDate)
   }
 
+  // --- RESTAURADO: Recibe number (index) del YearView ---
   const handleMonthDoubleClick = (monthIndex: number) => {
     const newDate = new Date(safeDate)
     newDate.setMonth(monthIndex)
@@ -46,14 +47,14 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
     <Card className="flex flex-col border-border/50 shadow-sm overflow-hidden bg-muted/10 h-full">
       <CardHeader className="shrink-0 bg-card border-b z-10 p-3 h-15 flex justify-center">
         <div className="grid grid-cols-2 lg:grid-cols-3 items-center w-full">
-          {/* Columna 1: Título (Solo visible en lg) */}
+          {/* Columna 1 */}
           <div className="hidden lg:flex items-center gap-2 justify-start">
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-primary" />
               Agenda
             </CardTitle>
           </div>
-          {/* Columna 2: Controles de año (Centrado) */}
+          {/* Columna 2 */}
           <div className="flex items-center justify-start lg:justify-center">
             <div className="flex items-center bg-muted/30 rounded-md border border-border/40 overflow-hidden shadow-sm transition-all duration-200 hover:border-primary/40 hover:bg-muted/60 hover:shadow-md group">
               <Button
@@ -82,7 +83,7 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
             </div>
           </div>
 
-          {/* Columna 3: Toggles (Siempre a la derecha) */}
+          {/* Columna 3 */}
           <div className="flex items-center justify-end">
             <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-md border border-transparent hover:border-border/40 transition-all">
               <Button
@@ -118,7 +119,7 @@ export function CalendarSection({ date, setDate, getDailyLoad }: CalendarSection
 
       <CardContent className="flex-1 p-0 min-h-0 relative bg-background overflow-hidden">
         {viewMode === 'month' ? (
-          <MonthView date={safeDate} setDate={setDate} getDailyLoad={getDailyLoad} />
+          <MonthView currentDate={safeDate} onDateChange={setDate} />
         ) : (
           <YearView
             year={safeDate.getFullYear()}

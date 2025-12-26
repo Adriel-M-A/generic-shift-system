@@ -1,6 +1,9 @@
+import { initAuthSchema } from './schema'
 import { registerAuthHandlers } from './handlers'
 
 export const AuthModule = {
-  name: 'auth',
-  register: () => registerAuthHandlers()
+  init: () => {
+    initAuthSchema()
+    registerAuthHandlers()
+  }
 }

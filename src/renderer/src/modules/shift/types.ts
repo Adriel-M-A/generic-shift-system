@@ -9,6 +9,13 @@ export interface Turno {
   hora: string
   profesional: string
   estado: EstadoTurno
+  // --- NUEVOS CAMPOS ---
+  customerId?: number | null
+  customerData?: {
+    documento: string
+    telefono?: string
+    email?: string
+  } | null
 }
 
 export interface ShiftStats {
@@ -21,4 +28,10 @@ export interface ShiftConfig {
   openingTime: string
   closingTime: string
   interval: number
+  // Configuración Visual
+  startOfWeek: 'monday' | 'sunday'
+  thresholds: {
+    low: number
+    medium: number
+  }
 }

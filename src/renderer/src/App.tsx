@@ -12,10 +12,10 @@ import Login from '@auth/pages/Login'
 import Perfil from '@auth/pages/Perfil'
 
 import { UIProvider, useUI } from '@core/context/UIContext'
-import { Turnos } from './modules/shift/pages/Turnos'
+import Turnos from './modules/shift/pages/Turnos'
 // 1. IMPORTAMOS EL PROVIDER
 import { ShiftProvider } from './modules/shift/context/ShiftContext'
-import { Servicios } from './modules/shift/pages/Servicios'
+import { Servicios } from './modules/services/pages/Servicios'
 import Customers from './modules/customers/pages/Customers'
 
 const BlockOverlay = () => {

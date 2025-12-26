@@ -4,18 +4,20 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
 import { getDB } from './core/database'
-import { registerWindowHandlers } from './core/window.ipc'
-import { registerBackupHandlers, runAutoBackup } from './core/backup.ipc'
 import { runMigrations } from './core/migrations'
+import { setupBackupSystem } from './core/backup.ipc'
+
+// Importar Módulos
 import { AuthModule } from './modules/auth'
 import { shiftModule } from './modules/shift'
-import { CustomersModule } from './modules/customers'
 import { settingsModule } from './modules/settings'
+import { CustomersModule } from './modules/customers'
+import { ServicesModule } from './modules/services'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1200,
+    height: 800,
     show: false,
     autoHideMenuBar: true,
     frame: false,
@@ -36,18 +38,22 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  registerWindowHandlers(mainWindow)
-  registerBackupHandlers()
-
+  // --- INICIALIZACIÓN ---
   const db = getDB()
 
-  console.log('Verificando migraciones de base de datos...')
+  // 1. Configurar DB
   runMigrations(db)
 
-  AuthModule.register()
-  shiftModule.init()
+  // 2. Inicializar Módulos
+  console.log('Iniciando módulos...')
+  AuthModule.init()
+  ServicesModule.init()
   CustomersModule.init()
+  shiftModule.init()
   settingsModule.init()
+
+  // 3. Sistema de Backups (Pasamos la ventana)
+  setupBackupSystem(mainWindow)
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -70,9 +76,8 @@ app.whenReady().then(() => {
   })
 })
 
-app.on('window-all-closed', async () => {
+app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    await runAutoBackup()
     app.quit()
   }
 })

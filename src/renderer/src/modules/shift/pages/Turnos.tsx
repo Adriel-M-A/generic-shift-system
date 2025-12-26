@@ -10,14 +10,25 @@ import { ShiftSection } from '../components/layout/ShiftSection'
 
 type MobileTab = 'calendar' | 'list'
 
-export function Turnos() {
-  const { date, setDate, shifts, getDailyLoad, formatDateHeader, changeShiftStatus, addShift } =
-    useShifts()
+export default function Turnos() {
+  // Export default añadido
+  // Mapeamos las variables del nuevo Contexto a los nombres que usabas en tu diseño
+  const {
+    currentDate: date,
+    setCurrentDate: setDate,
+    shifts,
+    getDailyLoad,
+    formatDateHeader,
+    changeShiftStatus,
+    createShift: addShift, // Usamos createShift del hook (que tiene toast) como addShift
+    loading
+  } = useShifts()
 
   const [mobileTab, setMobileTab] = useState<MobileTab>('calendar')
 
   return (
-    <div className="flex flex-col gap-4 animate-in fade-in duration-500 h-full">
+    <div className="flex flex-col gap-4 animate-in fade-in duration-500 h-full p-6">
+      {/* Nota: Agregué p-6 aquí porque vi que en tu versión anterior lo tenías en el div contenedor */}
       <ShiftHeader />
 
       <div className="flex-1 min-h-0 flex flex-col gap-3">
@@ -63,6 +74,7 @@ export function Turnos() {
             <ShiftSection
               date={date}
               shifts={shifts}
+              loading={loading} // Pasamos loading para manejar skeletons
               formatDateHeader={formatDateHeader}
               changeShiftStatus={changeShiftStatus}
               addShift={addShift}
