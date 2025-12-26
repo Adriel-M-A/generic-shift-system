@@ -36,7 +36,13 @@ const api = {
     toggle: (id) => ipcRenderer.invoke('services:toggle', id),
     delete: (id) => ipcRenderer.invoke('services:delete', id)
   },
-  // ------------------------------
+  customers: {
+    getAll: (): Promise<any[]> => ipcRenderer.invoke('customers:getAll'),
+    create: (data: any): Promise<any> => ipcRenderer.invoke('customers:create', data),
+    update: (id: string | number, data: any): Promise<any> =>
+      ipcRenderer.invoke('customers:update', id, data),
+    delete: (id: string | number): Promise<any> => ipcRenderer.invoke('customers:delete', id)
+  },
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
     setMany: (settings) => ipcRenderer.invoke('settings:setMany', settings)

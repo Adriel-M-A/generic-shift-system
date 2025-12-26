@@ -1,67 +1,73 @@
-import { useState } from 'react'
-import { Customer, CustomerFormData } from '../types'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-
-const MOCK_CUSTOMERS: Customer[] = [
-  {
-    id: '1',
-    documento: '12345678',
-    nombre: 'Juan',
-    apellido: 'Pérez',
-    telefono: '123-4567',
-    email: 'juan@example.com'
-  },
-  {
-    id: '2',
-    documento: '87654321',
-    nombre: 'Maria',
-    apellido: 'Gomez',
-    email: 'maria@example.com'
-  }
-]
+import { Customer, CustomerFormData } from '../types'
 
 export function useCustomers() {
-  const [customers, setCustomers] = useState<Customer[]>(MOCK_CUSTOMERS)
-  const [isLoading, setIsLoading] = useState(false)
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Función para cargar clientes desde la DB
+  const fetchCustomers = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const data = await window.api.customers.getAll()
+      setCustomers(data)
+    } catch (error) {
+      console.error(error)
+      toast.error('Error al cargar la lista de clientes')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Cargar datos al iniciar
+  useEffect(() => {
+    fetchCustomers()
+  }, [fetchCustomers])
 
   const createCustomer = async (data: CustomerFormData) => {
-    setIsLoading(true)
     try {
-      const newCustomer: Customer = {
-        ...data,
-        id: Math.random().toString(36).substr(2, 9)
-      }
-      setCustomers((prev) => [...prev, newCustomer])
+      await window.api.customers.create(data)
       toast.success('Cliente creado correctamente')
+      fetchCustomers() // Recargar lista
       return true
-    } catch (error) {
-      toast.error('Error al crear cliente')
+    } catch (error: any) {
+      console.error(error)
+      // Mensaje de error personalizado si viene del backend (ej. duplicado)
+      const message = error.message.includes('Error:')
+        ? error.message.split('Error: ')[1]
+        : 'Error al crear cliente'
+      toast.error(message)
       return false
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const updateCustomer = async (id: string, data: CustomerFormData) => {
-    setIsLoading(true)
+  const updateCustomer = async (id: string | number, data: CustomerFormData) => {
     try {
-      setCustomers((prev) => prev.map((c) => (c.id === id ? { ...data, id } : c)))
+      await window.api.customers.update(id, data)
       toast.success('Cliente actualizado correctamente')
+      fetchCustomers() // Recargar lista
       return true
-    } catch (error) {
-      toast.error('Error al actualizar cliente')
+    } catch (error: any) {
+      console.error(error)
+      const message = error.message.includes('Error:')
+        ? error.message.split('Error: ')[1]
+        : 'Error al actualizar cliente'
+      toast.error(message)
       return false
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const deleteCustomer = async (id: string) => {
+  const deleteCustomer = async (id: string | number) => {
     try {
-      setCustomers((prev) => prev.filter((c) => c.id !== id))
+      await window.api.customers.delete(id)
       toast.success('Cliente eliminado')
+      fetchCustomers() // Recargar lista
+      return true
     } catch (error) {
+      console.error(error)
       toast.error('Error al eliminar cliente')
+      return false
     }
   }
 
@@ -70,6 +76,7 @@ export function useCustomers() {
     isLoading,
     createCustomer,
     updateCustomer,
-    deleteCustomer
+    deleteCustomer,
+    refresh: fetchCustomers
   }
 }

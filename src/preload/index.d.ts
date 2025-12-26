@@ -1,5 +1,22 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
+interface Customer {
+  id: number
+  documento: string
+  nombre: string
+  apellido: string
+  telefono?: string
+  email?: string
+}
+
+interface CustomerInput {
+  documento: string
+  nombre: string
+  apellido: string
+  telefono?: string
+  email?: string
+}
+
 interface WindowAPI {
   minimize: () => void
   maximize: () => void
@@ -46,6 +63,13 @@ interface SettingsAPI {
   setMany: (settings: Record<string, string>) => Promise<any>
 }
 
+interface CustomersAPI {
+  getAll: () => Promise<Customer[]>
+  create: (data: CustomerInput) => Promise<boolean>
+  update: (id: number | string, data: CustomerInput) => Promise<boolean>
+  delete: (id: number | string) => Promise<void>
+}
+
 interface API {
   window: WindowAPI
   auth: AuthAPI
@@ -53,6 +77,7 @@ interface API {
   shift: ShiftAPI
   services: ServicesAPI
   settings: SettingsAPI
+  customers: CustomersAPI
 }
 
 declare global {

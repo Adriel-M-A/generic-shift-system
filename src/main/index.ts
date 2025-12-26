@@ -9,6 +9,7 @@ import { registerBackupHandlers, runAutoBackup } from './core/backup.ipc'
 import { runMigrations } from './core/migrations'
 import { AuthModule } from './modules/auth'
 import { shiftModule } from './modules/shift'
+import { CustomersModule } from './modules/customers'
 import { settingsModule } from './modules/settings'
 
 function createWindow(): void {
@@ -45,6 +46,7 @@ function createWindow(): void {
 
   AuthModule.register()
   shiftModule.init()
+  CustomersModule.init()
   settingsModule.init()
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
