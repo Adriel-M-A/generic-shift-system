@@ -1,5 +1,15 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { Plus, Save, Clock, Briefcase, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import {
+  Plus,
+  Save,
+  Clock,
+  Briefcase,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  Search,
+  User
+} from 'lucide-react'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Label } from '@ui/label'
@@ -13,7 +23,6 @@ import {
   DialogTrigger
 } from '@ui/dialog'
 import { TimePicker } from '@ui/time-picker'
-// 1. IMPORTAMOS EL HOOK
 import { useShifts, NewShiftData } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
 
@@ -24,51 +33,68 @@ interface ShiftFormProps {
 }
 
 export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormProps) {
-  // 2. OBTENEMOS LA CONFIGURACIÓN GLOBAL
   const { config } = useShifts()
 
   const [open, setOpen] = useState(false)
   const [isServiceOpen, setIsServiceOpen] = useState(false)
   const serviceWrapperRef = useRef<HTMLDivElement>(null)
 
-  // 3. INICIALIZAMOS CON LA HORA DE APERTURA REAL
   const [time, setTime] = useState(config.openingTime || '09:00')
 
-  // --- NUEVO: Estado para Servicios Dinámicos ---
   const [availableServices, setAvailableServices] = useState<string[]>([])
+  const [customers, setCustomers] = useState<any[]>([])
 
-  // Efecto para actualizar la hora por defecto si cambia la config
+  const [searchDoc, setSearchDoc] = useState('')
+  const [formData, setFormData] = useState<{ cliente: string; servicio: string }>({
+    cliente: '',
+    servicio: ''
+  })
+
   useEffect(() => {
     if (config.openingTime) {
       setTime(config.openingTime)
     }
   }, [config.openingTime])
 
-  // --- NUEVO: Cargar servicios reales al abrir el modal ---
   useEffect(() => {
-    async function fetchServices() {
+    async function fetchData() {
       try {
-        const allServices = await window.api.services.getAll()
-        // Filtramos solo los activos y mapeamos a string[] para mantener compatibilidad
-        const activeServiceNames = allServices
+        const [servicesData, customersData] = await Promise.all([
+          window.api.services.getAll(),
+          window.api.customers.getAll()
+        ])
+
+        const activeServiceNames = servicesData
           .filter((s: any) => s.activo === 1)
           .map((s: any) => s.nombre)
-
         setAvailableServices(activeServiceNames)
+
+        setCustomers(customersData)
       } catch (error) {
-        console.error('Error cargando servicios:', error)
+        console.error('Error cargando datos:', error)
       }
     }
 
     if (open) {
-      fetchServices()
+      fetchData()
     }
   }, [open])
 
-  const [formData, setFormData] = useState<{ cliente: string; servicio: string }>({
-    cliente: '',
-    servicio: ''
-  })
+  const foundCustomer = useMemo(() => {
+    if (!searchDoc) return null
+    return customers.find((c) => c.documento === searchDoc)
+  }, [searchDoc, customers])
+
+  useEffect(() => {
+    if (foundCustomer) {
+      setFormData((prev) => ({
+        ...prev,
+        cliente: `${foundCustomer.apellido} ${foundCustomer.nombre}`
+      }))
+    } else {
+      setFormData((prev) => ({ ...prev, cliente: '' }))
+    }
+  }, [foundCustomer])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -82,7 +108,6 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isServiceOpen])
 
-  // Usamos availableServices en lugar de la constante
   const filteredServices = useMemo(() => {
     return availableServices.filter((s) =>
       s.toLowerCase().includes(formData.servicio.toLowerCase())
@@ -100,7 +125,8 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
 
     setOpen(false)
     setFormData({ cliente: '', servicio: '' })
-    setTime(config.openingTime) // Reset a la hora de apertura
+    setSearchDoc('')
+    setTime(config.openingTime)
     setIsServiceOpen(false)
   }
 
@@ -115,7 +141,10 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-137.5 overflow-visible gap-0 block">
+      <DialogContent
+        className="sm:max-w-137.5 overflow-visible gap-0 block"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <form onSubmit={handleSubmit}>
           <DialogHeader className="mb-5 pt-1">
             <DialogTitle className="flex items-center gap-2 text-lg">
@@ -128,12 +157,10 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
           </DialogHeader>
 
           <div className="grid gap-5 py-1">
-            {/* 1. SELECCIÓN DE HORARIO CONECTADA */}
             <div className="grid gap-2">
               <Label className="flex items-center gap-2 text-muted-foreground font-medium text-sm">
                 <Clock className="h-3.5 w-3.5" /> Horario
               </Label>
-
               <TimePicker
                 value={time}
                 onChange={setTime}
@@ -141,14 +168,12 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
                 minTime={config.openingTime}
                 maxTime={config.closingTime}
               />
-
               <p className="text-[10px] text-muted-foreground">
                 * Turnos cada {config.interval} minutos entre {config.openingTime} y{' '}
                 {config.closingTime}.
               </p>
             </div>
 
-            {/* 2. Selección de Servicio (Dinámico) */}
             <div className="grid gap-2 relative z-50" ref={serviceWrapperRef}>
               <Label
                 htmlFor="servicio"
@@ -171,7 +196,6 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
                   autoComplete="off"
                   required
                 />
-
                 <Button
                   type="button"
                   variant="ghost"
@@ -222,21 +246,64 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
               </div>
             </div>
 
-            {/* 3. Nombre del Cliente */}
-            <div className="grid gap-2 relative z-0">
-              <Label htmlFor="cliente" className="text-muted-foreground font-medium text-sm">
-                Nombre del Cliente
-              </Label>
-              <Input
-                id="cliente"
-                placeholder="Ej. Juan Pérez"
-                value={formData.cliente}
-                onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
-                autoComplete="off"
-                className="h-10"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label
+                  htmlFor="searchDoc"
+                  className="flex items-center gap-2 text-muted-foreground font-medium text-sm"
+                >
+                  <Search className="h-3.5 w-3.5" /> Documento
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="searchDoc"
+                    placeholder="Buscar DNI..."
+                    value={searchDoc}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '')
+                      setSearchDoc(value)
+                    }}
+                    className="h-10 pl-9"
+                    autoComplete="off"
+                    maxLength={15}
+                  />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label
+                  htmlFor="cliente"
+                  className="flex items-center gap-2 text-muted-foreground font-medium text-sm"
+                >
+                  <User className="h-3.5 w-3.5" /> Nombre del Cliente
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="cliente"
+                    placeholder={searchDoc ? 'No encontrado' : 'Buscar documento...'}
+                    value={formData.cliente}
+                    readOnly={true}
+                    tabIndex={-1}
+                    className={cn(
+                      'h-10 pl-9 bg-muted text-muted-foreground cursor-not-allowed border-muted',
+                      foundCustomer && 'bg-emerald-50/50 text-foreground border-emerald-200'
+                    )}
+                  />
+                  {foundCustomer ? (
+                    <Check className="absolute left-3 top-3 h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
+                  )}
+                </div>
+              </div>
             </div>
+
+            {!foundCustomer && searchDoc.length > 2 && (
+              <p className="text-[11px] text-destructive/80 -mt-2">
+                * Cliente no encontrado. Por favor verifique el documento.
+              </p>
+            )}
           </div>
 
           <DialogFooter className="mt-6 pt-2">
