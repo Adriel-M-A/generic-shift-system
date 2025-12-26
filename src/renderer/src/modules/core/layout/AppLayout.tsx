@@ -47,7 +47,7 @@ export default function AppLayout() {
         </header>
 
         <div className="flex-1 overflow-hidden relative bg-background flex flex-col">
-          <div className="h-full flex flex-col p-4 md:p-6 lg:p-8 min-h-0">
+          <div className="h-full flex flex-col p-2 md:p-4 lg:p-6 min-h-0">
             <Outlet />
           </div>
         </div>

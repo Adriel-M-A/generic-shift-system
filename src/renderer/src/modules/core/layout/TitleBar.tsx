@@ -21,7 +21,7 @@ export default function TitleBar(): React.ReactElement {
   }
 
   return (
-    <div className="h-8 flex select-none items-center justify-between bg-sidebar text-sidebar-foreground titlebar-drag">
+    <div className="h-8 flex select-none items-center justify-between bg-sidebar text-sidebar-foreground titlebar-drag border-b">
       <div className="flex items-center px-4 gap-2">
         <div className="h-3 w-3 rounded-full bg-primary animate-pulse shadow-[0_0_8px_hsl(var(--primary))]" />
         <span className="text-xs font-semibold tracking-wide opacity-90">
