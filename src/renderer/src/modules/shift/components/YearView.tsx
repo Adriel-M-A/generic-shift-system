@@ -12,75 +12,57 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
   const { getDailyLoad, config } = useShifts()
 
   const months = Array.from({ length: 12 }, (_, i) => i)
-
   const weekDays =
     config.startOfWeek === 'monday'
       ? ['L', 'M', 'X', 'J', 'V', 'S', 'D']
       : ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
-  // --- CORRECCIÓN: Usando tus variables de main.css ---
   const getLoadColor = (load: number) => {
     const { low, medium } = config.thresholds
-    if (load > medium) return 'bg-load-high' // Rojo
-    if (load > low) return 'bg-load-medium' // Amarillo
-    if (load > 0) return 'bg-load-low' // Azul
+    if (load > medium) return 'bg-load-high'
+    if (load > low) return 'bg-load-medium'
+    if (load > 0) return 'bg-load-low'
     return 'bg-transparent'
   }
 
   return (
-    <div className="h-full overflow-y-auto pb-2 pt-2 pl-2.5">
-      <div
-        className={cn(
-          'grid gap-3',
-          'grid-cols-1',
-          'sm:grid-cols-2',
-          'md:grid-cols-1',
-          'lg:grid-cols-2',
-          'xl:grid-cols-3',
-          '2xl:grid-cols-4'
-        )}
-      >
+    <div className="h-full overflow-y-auto p-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {months.map((monthIndex) => {
-          const date = new Date(year, monthIndex, 1)
-          const monthName = date.toLocaleDateString('es-ES', { month: 'long' })
+          const firstDayOfMonth = new Date(year, monthIndex, 1)
+          const monthName = firstDayOfMonth.toLocaleDateString('es-ES', { month: 'long' })
           const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
-          const startDay = new Date(year, monthIndex, 1).getDay()
-
-          const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+          const startDay = firstDayOfMonth.getDay()
 
           let emptySlotsCount = startDay
           if (config.startOfWeek === 'monday') {
             emptySlotsCount = startDay === 0 ? 6 : startDay - 1
           }
-          const emptySlots = Array.from({ length: emptySlotsCount }, (_, i) => i)
 
           return (
             <div
               key={monthIndex}
               onDoubleClick={() => onMonthDoubleClick(monthIndex)}
-              className="border border-border/40 rounded-lg p-3 bg-card shadow-sm hover:border-border/80 hover:bg-muted/10 transition-all flex flex-col select-none cursor-pointer"
-              title="Doble click para ver este mes"
+              className="border border-border/40 rounded-lg p-3 bg-card shadow-sm hover:bg-muted/10 transition-all cursor-pointer"
             >
               <h4 className="text-xs font-bold capitalize mb-2 text-primary/80 text-center">
                 {monthName}
               </h4>
-
-              <div className="grid grid-cols-7 gap-1 text-[9px] text-muted-foreground mb-1 text-center font-medium opacity-70">
+              <div className="grid grid-cols-7 gap-1 text-[9px] text-muted-foreground mb-1 text-center font-medium">
                 {weekDays.map((d) => (
                   <span key={d}>{d}</span>
                 ))}
               </div>
-
-              <div className="grid grid-cols-7 gap-1 flex-1 content-start">
-                {emptySlots.map((i) => (
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: emptySlotsCount }).map((_, i) => (
                   <div key={`empty-${i}`} />
                 ))}
-
-                {days.map((day) => {
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1
                   const thisDate = new Date(year, monthIndex, day)
+                  const load = getDailyLoad(thisDate)
                   const isSelected = currentDate?.toDateString() === thisDate.toDateString()
                   const isToday = new Date().toDateString() === thisDate.toDateString()
-                  const load = getDailyLoad(thisDate)
 
                   return (
                     <button
@@ -89,26 +71,19 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
                         e.stopPropagation()
                         onSelectDate(thisDate)
                       }}
-                      title={load > 0 ? `${load} turnos` : undefined}
                       className={cn(
-                        'relative flex items-center justify-center rounded-[3px] transition-all outline-none',
-                        'h-8 sm:h-auto sm:aspect-square',
-                        'hover:bg-muted focus:ring-1 focus:ring-primary/50',
+                        'relative aspect-square flex items-center justify-center rounded-sm text-[10px] transition-all',
                         isSelected
-                          ? 'bg-primary text-primary-foreground font-bold shadow-sm z-10'
-                          : 'text-foreground/80',
-                        isToday &&
-                          !isSelected &&
-                          'ring-1 ring-inset ring-primary/40 font-semibold bg-primary/5'
+                          ? 'bg-primary text-primary-foreground font-bold'
+                          : 'text-foreground/80 hover:bg-muted',
+                        isToday && !isSelected && 'ring-1 ring-primary/40 bg-primary/5'
                       )}
                     >
-                      <span className="text-[10px] leading-none z-10">{day}</span>
-
-                      {/* Indicador de carga usando tus colores */}
+                      {day}
                       {load > 0 && (
                         <div
                           className={cn(
-                            'absolute bottom-0 left-0 right-0 h-1 opacity-70',
+                            'absolute bottom-0 left-0 right-0 h-0.5 opacity-70',
                             getLoadColor(load)
                           )}
                         />

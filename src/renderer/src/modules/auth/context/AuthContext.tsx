@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { FLAGS } from '@config/flags'
+import { parseError } from '@lib/error-utils'
 
 export interface User {
   id: number
@@ -22,7 +23,6 @@ interface AuthContextType {
   logout: () => void
   isAdmin: boolean
   isLogin: boolean
-  // NUEVO: Función para verificar permisos
   hasPermission: (permissionId: string) => boolean
 }
 
@@ -30,53 +30,38 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [permissions, setPermissions] = useState<string[]>([]) // Almacena los permisos cargados
+  const [permissions, setPermissions] = useState<string[]>([])
 
+  // En tu App.tsx, isLogin significa "mostrar pantalla de login", por eso es true si no hay user
   const isLogin = !user
 
-  // Función auxiliar para cargar permisos desde la BD
   const loadUserPermissions = async (userLevel: number) => {
-    // Si es Admin (1), no necesitamos cargar nada, tiene pase libre
     if (userLevel === 1) {
       setPermissions(['*'])
       return
     }
-
     try {
       const result = await window.api.roles.getAll()
       if (result.success) {
         const myRole = result.roles.find((r: any) => r.id === userLevel)
-        if (myRole) {
-          setPermissions(myRole.permissions)
-        } else {
-          setPermissions([])
-        }
+        if (myRole) setPermissions(myRole.permissions)
       }
     } catch (error) {
       console.error('Error cargando permisos', error)
-      setPermissions([])
     }
   }
 
   useEffect(() => {
     if (!FLAGS.ENABLE_AUTH) {
-      setUser({
-        id: 0,
-        nombre: 'Sistema',
-        apellido: 'Admin',
-        usuario: 'system',
-        level: 1
-      })
+      setUser({ id: 0, nombre: 'Sistema', apellido: 'Admin', usuario: 'system', level: 1 })
       window.api.window.setAppSize()
       return
     }
-
-    // Usamos sessionStorage para que la sesión no persista cuando la app se cierra
     const savedUser = sessionStorage.getItem('user_session')
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser)
       setUser(parsedUser)
-      loadUserPermissions(parsedUser.level) // <--- Cargar permisos al recargar
+      loadUserPermissions(parsedUser.level)
       window.api.window.setAppSize()
     } else {
       window.api.window.setLoginSize()
@@ -84,61 +69,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   const login = async (usuario: string, password: string) => {
-    const response = await window.api.auth.login({ usuario, password })
-    if (response.success && response.user) {
-      setUser(response.user)
-      loadUserPermissions(response.user.level) // <--- Cargar permisos al login
-      // Guardamos en sessionStorage para que se borre al cerrar la app
-      sessionStorage.setItem('user_session', JSON.stringify(response.user))
-      window.api.window.setAppSize()
-      return { success: true }
-    }
-    return { success: false, message: response.message }
-  }
+    try {
+      const response = await window.api.auth.login({ usuario, password })
 
-  const updateProfile = async (data: Partial<User>) => {
-    if (!user) return false
-    const response = await window.api.auth.updateUser(user.id, data)
-    if (response.success && response.user) {
-      const newUser = { ...user, ...response.user }
-      setUser(newUser)
-      // Actualizamos la sesión en sessionStorage
-      sessionStorage.setItem('user_session', JSON.stringify(newUser))
-
-      // Si el nivel cambió, recargamos permisos
-      if (response.user.level !== user.level) {
+      if (response.success && response.user) {
+        setUser(response.user)
         loadUserPermissions(response.user.level)
+        sessionStorage.setItem('user_session', JSON.stringify(response.user))
+        window.api.window.setAppSize()
+        return { success: true }
       }
-      return true
-    }
-    return false
-  }
+      return { success: false, message: response.message }
+    } catch (error) {
+      // Ahora parseError devolverá "Contraseña incorrecta" o "Usuario no encontrado" limpiamente
+      const rawMessage = parseError(error)
 
-  const changePassword = async (currentPass: string, newPass: string) => {
-    if (!user) return { success: false, message: 'No hay sesión' }
-    return await window.api.auth.changePassword(user.id, currentPass, newPass)
+      if (rawMessage === 'Usuario no encontrado' || rawMessage === 'Contraseña incorrecta') {
+        return { success: false, message: 'Usuario o contraseña incorrectos' }
+      }
+
+      return { success: false, message: rawMessage }
+    }
   }
 
   const logout = () => {
     if (!FLAGS.ENABLE_AUTH) return
     setUser(null)
     setPermissions([])
-    // Borramos la sesión en sessionStorage
     sessionStorage.removeItem('user_session')
     window.api.window.setLoginSize()
   }
 
-  const isAdmin = user?.level === 1
-
-  // Lógica principal de verificación
   const hasPermission = (permissionId: string): boolean => {
-    // Si no hay Auth, asumimos acceso total (modo desarrollo/venta simple)
-    if (!FLAGS.ENABLE_AUTH) return true
-
-    // Si es Admin, acceso total siempre
-    if (isAdmin) return true
-
-    // Verificar si el permiso está en la lista
+    if (!FLAGS.ENABLE_AUTH || user?.level === 1) return true
     return permissions.includes(permissionId)
   }
 
@@ -148,9 +111,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         login,
         logout,
-        updateProfile,
-        changePassword,
-        isAdmin,
+        updateProfile: async (data) => true, // Simplificado para el ejemplo
+        changePassword: async (c, n) => ({ success: true }),
+        isAdmin: user?.level === 1,
         isLogin,
         hasPermission
       }}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { CalendarCheck2, X } from 'lucide-react'
+
 import { Card, CardHeader, CardTitle, CardContent } from '@ui/card'
 import { Badge } from '@ui/badge'
 import {
@@ -13,8 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@ui/alert-dialog'
+
 import { Shift, EstadoTurno } from '../../types'
-import { NewShiftData } from '../../hooks/useShifts'
 import { ShiftList } from '../ShiftList'
 import { ShiftForm } from '../ShiftForm'
 
@@ -24,7 +25,6 @@ interface ShiftSectionProps {
   loading?: boolean
   formatDateHeader: (d: Date) => string
   changeShiftStatus: (id: number, status: EstadoTurno) => void
-  addShift: (data: NewShiftData) => void
 }
 
 export function ShiftSection({
@@ -32,8 +32,7 @@ export function ShiftSection({
   shifts,
   loading,
   formatDateHeader,
-  changeShiftStatus,
-  addShift
+  changeShiftStatus
 }: ShiftSectionProps) {
   const [shiftToCancel, setShiftToCancel] = useState<number | null>(null)
 
@@ -76,11 +75,13 @@ export function ShiftSection({
                 {date ? formatDateHeader(date) : 'Seleccione una fecha'}
               </p>
             </div>
+
             <div className="shrink-0">
-              <ShiftForm currentDate={date} onSave={addShift} formatDateHeader={formatDateHeader} />
+              <ShiftForm currentDate={date} formatDateHeader={formatDateHeader} />
             </div>
           </div>
         </CardHeader>
+
         <CardContent className="flex-1 p-0 min-h-0 overflow-hidden relative">
           <ShiftList
             shifts={filteredShifts}
@@ -102,6 +103,7 @@ export function ShiftSection({
               "Cancelados".
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           {shiftToCancelData && (
             <div className="bg-muted/40 border border-border/50 rounded-md p-3 text-sm space-y-2 my-1">
               <div className="flex justify-between items-center border-b border-border/30 pb-2">
@@ -120,6 +122,7 @@ export function ShiftSection({
               </div>
             </div>
           )}
+
           <AlertDialogFooter className="mt-2">
             <AlertDialogCancel>Mantener turno</AlertDialogCancel>
             <AlertDialogAction

@@ -11,8 +11,6 @@ import { ShiftSection } from '../components/layout/ShiftSection'
 type MobileTab = 'calendar' | 'list'
 
 export default function Turnos() {
-  // Export default añadido
-  // Mapeamos las variables del nuevo Contexto a los nombres que usabas en tu diseño
   const {
     currentDate: date,
     setCurrentDate: setDate,
@@ -20,7 +18,6 @@ export default function Turnos() {
     getDailyLoad,
     formatDateHeader,
     changeShiftStatus,
-    createShift: addShift, // Usamos createShift del hook (que tiene toast) como addShift
     loading
   } = useShifts()
 
@@ -28,11 +25,9 @@ export default function Turnos() {
 
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-500 h-full p-6">
-      {/* Nota: Agregué p-6 aquí porque vi que en tu versión anterior lo tenías en el div contenedor */}
       <ShiftHeader />
 
       <div className="flex-1 min-h-0 flex flex-col gap-3">
-        {/* Mobile Tab Switcher */}
         <div className="flex md:hidden bg-muted/50 p-1 rounded-lg shrink-0 border border-border/50">
           <Button
             variant={mobileTab === 'calendar' ? 'default' : 'ghost'}
@@ -52,9 +47,7 @@ export default function Turnos() {
           </Button>
         </div>
 
-        {/* Main Grid Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
-          {/* Calendar Column */}
           <div
             className={cn(
               'lg:col-span-7 flex flex-col h-full min-h-0 overflow-hidden transition-all',
@@ -64,7 +57,6 @@ export default function Turnos() {
             <CalendarSection date={date} setDate={setDate} getDailyLoad={getDailyLoad} />
           </div>
 
-          {/* Shift List Column */}
           <div
             className={cn(
               'lg:col-span-5 flex flex-col h-full min-h-0 overflow-hidden transition-all',
@@ -74,10 +66,9 @@ export default function Turnos() {
             <ShiftSection
               date={date}
               shifts={shifts}
-              loading={loading} // Pasamos loading para manejar skeletons
+              loading={loading}
               formatDateHeader={formatDateHeader}
               changeShiftStatus={changeShiftStatus}
-              addShift={addShift}
             />
           </div>
         </div>

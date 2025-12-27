@@ -36,22 +36,46 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [view, setView] = useState<'month' | 'year'>('month')
   const [shifts, setShifts] = useState<Shift[]>([])
+  const [dailyLoads, setDailyLoads] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(false)
   const [config, setConfig] = useState<ShiftConfig>(DEFAULT_CONFIG)
 
-  const toLocalISODate = (d: Date) => {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const toLocalISODate = (d: Date): string => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   const formatDateHeader = (date: Date) => format(date, "EEEE d 'de' MMMM", { locale: es })
 
-  const getDailyLoad = useCallback(
-    (date: Date) => {
-      const dateStr = toLocalISODate(date)
-      return shifts.filter((s) => s.fecha === dateStr).length
-    },
-    [shifts]
-  )
+  const fetchLoads = useCallback(async () => {
+    try {
+      const year = currentDate.getFullYear()
+      let data: { fecha: string; count: number }[] = []
+
+      if (view === 'month') {
+        data = await window.api.shift.getMonthlyLoad({
+          year,
+          month: currentDate.getMonth() + 1
+        })
+      } else {
+        data = await window.api.shift.getYearlyLoad(year)
+      }
+
+      const map = data.reduce(
+        (acc, curr) => {
+          acc[curr.fecha] = curr.count
+          return acc
+        },
+        {} as Record<string, number>
+      )
+
+      setDailyLoads(map)
+    } catch (e) {
+      console.error('Error fetching loads:', e)
+    }
+  }, [currentDate.getMonth(), currentDate.getFullYear(), view])
 
   const fetchShifts = useCallback(async () => {
     setLoading(true)
@@ -59,40 +83,56 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
       const result = await window.api.shift.getByDate(toLocalISODate(currentDate))
       setShifts(result)
     } catch (error) {
-      toast.error('Error al cargar turnos')
+      toast.error('No se pudieron cargar los turnos')
+      setShifts([])
     } finally {
       setLoading(false)
     }
   }, [currentDate])
 
+  const getDailyLoad = useCallback(
+    (date: Date) => {
+      return dailyLoads[toLocalISODate(date)] || 0
+    },
+    [dailyLoads]
+  )
+
   useEffect(() => {
-    async function init() {
-      const settings = await window.api.settings.getAll()
-      setConfig({
-        openingTime: settings.shift_opening || DEFAULT_CONFIG.openingTime,
-        closingTime: settings.shift_closing || DEFAULT_CONFIG.closingTime,
-        interval: Number(settings.shift_interval) || DEFAULT_CONFIG.interval,
-        startOfWeek: (settings.calendar_start_day as any) || DEFAULT_CONFIG.startOfWeek,
-        showFinishedShifts: settings.show_finished_shifts === 'true',
-        thresholds: {
-          low: Number(settings.threshold_low) || DEFAULT_CONFIG.thresholds.low,
-          medium: Number(settings.threshold_medium) || DEFAULT_CONFIG.thresholds.medium
-        }
-      })
+    const loadConfig = async () => {
+      try {
+        const settings = await window.api.settings.getAll()
+        setConfig({
+          openingTime: settings.shift_opening || DEFAULT_CONFIG.openingTime,
+          closingTime: settings.shift_closing || DEFAULT_CONFIG.closingTime,
+          interval: Number(settings.shift_interval) || DEFAULT_CONFIG.interval,
+          startOfWeek: (settings.calendar_start_day as any) || DEFAULT_CONFIG.startOfWeek,
+          showFinishedShifts: settings.show_finished_shifts === 'true',
+          thresholds: {
+            low: Number(settings.threshold_low) || DEFAULT_CONFIG.thresholds.low,
+            medium: Number(settings.threshold_medium) || DEFAULT_CONFIG.thresholds.medium
+          }
+        })
+      } catch (e) {
+        console.error(e)
+      }
     }
-    init()
+    loadConfig()
   }, [])
 
   useEffect(() => {
     fetchShifts()
   }, [fetchShifts])
+  useEffect(() => {
+    fetchLoads()
+  }, [fetchLoads])
 
   const addShift = async (data: NewShiftData) => {
     try {
       await window.api.shift.create({ ...data, fecha: data.fecha || toLocalISODate(currentDate) })
       fetchShifts()
-    } catch (e: any) {
-      throw new Error(parseError(e))
+      fetchLoads()
+    } catch (error) {
+      throw new Error(parseError(error))
     }
   }
 
@@ -100,7 +140,8 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await window.api.shift.updateStatus({ id, estado })
       setShifts((prev) => prev.map((s) => (s.id === id ? { ...s, estado } : s)))
-    } catch (e) {
+      fetchLoads()
+    } catch (error) {
       fetchShifts()
     }
   }
