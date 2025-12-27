@@ -9,8 +9,8 @@ export function initCustomersSchema(): void {
       apellido TEXT NOT NULL,
       telefono TEXT,
       email TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT (datetime('now', 'localtime')),
+      updated_at DATETIME DEFAULT (datetime('now', 'localtime'))
     )
   `)
 }

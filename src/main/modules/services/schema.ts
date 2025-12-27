@@ -6,7 +6,7 @@ export function initServicesSchema() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL UNIQUE,
       activo INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT (datetime('now', 'localtime'))
     )
   `)
 }

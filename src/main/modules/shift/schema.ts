@@ -11,7 +11,7 @@ export function initShiftSchema() {
       customer_id INTEGER,
       profesional TEXT DEFAULT 'Staff',
       estado TEXT DEFAULT 'pendiente',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT (datetime('now', 'localtime')),
       FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
     )
   `)

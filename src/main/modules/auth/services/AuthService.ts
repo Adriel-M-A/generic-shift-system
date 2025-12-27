@@ -24,8 +24,10 @@ export class AuthService {
     // Iniciar sesión
     this.currentSession = { id: user.id, level: user.level }
 
-    // Actualizar último login
-    db.prepare('UPDATE usuarios SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id)
+    // CORREGIDO: Usar hora local (Argentina) en lugar de UTC
+    db.prepare("UPDATE usuarios SET last_login = datetime('now', 'localtime') WHERE id = ?").run(
+      user.id
+    )
 
     const { password: _, ...userData } = user
     return { success: true, user: userData }

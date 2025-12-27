@@ -12,7 +12,7 @@ export function initAuthSchema() {
       password TEXT NOT NULL,
       level INTEGER NOT NULL CHECK (level IN (1, 2, 3)),
       last_login DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT (datetime('now', 'localtime'))
     )
   `)
 
@@ -25,7 +25,7 @@ export function initAuthSchema() {
     )
   `)
 
-  // 3. Seed Roles (Si está vacío)
+  // 3. Seed Roles
   const rolesCount = db.prepare('SELECT count(*) as count FROM roles').get() as any
   if (rolesCount.count === 0) {
     const adminPerms = JSON.stringify(['*'])
@@ -38,15 +38,15 @@ export function initAuthSchema() {
     stmt.run(3, 'Auditor', auditorPerms)
   }
 
-  // 4. Seed Usuario Admin (Si está vacío)
+  // 4. Seed Usuario Admin
   const userCount = db.prepare('SELECT count(*) as count FROM usuarios').get() as any
   if (userCount.count === 0) {
-    const pass = bcrypt.hashSync('admin123', 10)
+    const pass = bcrypt.hashSync('admin', 10)
     db.prepare(
       `
       INSERT INTO usuarios (nombre, apellido, usuario, password, level) 
       VALUES (?, ?, ?, ?, ?)
     `
-    ).run('Admin', 'Principal', 'administrador', pass, 1)
+    ).run('Admin', 'Principal', 'admin', pass, 1)
   }
 }
