@@ -1,20 +1,19 @@
 import { ipcMain } from 'electron'
-import { AuthService } from './service'
+import { authService } from './service'
 
 export function registerAuthHandlers(): void {
-  // Auth & Usuarios
-  ipcMain.handle('auth:login', (_, { usuario, password }) => AuthService.login(usuario, password))
-  ipcMain.handle('auth:get-users', () => ({ success: true, users: AuthService.getUsers() }))
-  ipcMain.handle('auth:create-user', (_, data) => AuthService.createUser(data))
-  ipcMain.handle('auth:update-user', (_, { id, data }) => AuthService.updateUser(id, data))
-  ipcMain.handle('auth:delete-user', (_, id) => AuthService.deleteUser(id))
-  ipcMain.handle('auth:change-password', (_, { id, currentPassword, newPassword }) =>
-    AuthService.changePassword(id, currentPassword, newPassword)
+  ipcMain.handle('auth:login', (_, { usuario, password }) => authService.login(usuario, password))
+  ipcMain.handle('auth:getUsers', () => ({ success: true, users: authService.getUsers() }))
+  ipcMain.handle('auth:createUser', (_, data) => authService.createUser(data))
+  ipcMain.handle('auth:updateUser', (_, { id, data }) => authService.updateUser(id, data))
+  ipcMain.handle('auth:deleteUser', (_, id) => authService.deleteUser(id))
+  ipcMain.handle('auth:changePassword', (_, { id, currentPassword, newPassword }) =>
+    authService.changePassword(id, currentPassword, newPassword)
   )
 
   // Roles
-  ipcMain.handle('roles:get', () => ({ success: true, roles: AuthService.getRoles() }))
+  ipcMain.handle('roles:getAll', () => ({ success: true, roles: authService.getRoles() }))
   ipcMain.handle('roles:update', (_, { id, label, permissions }) =>
-    AuthService.updateRole(id, label, permissions)
+    authService.updateRole(id, label, permissions)
   )
 }

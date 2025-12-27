@@ -2,32 +2,35 @@ import { db } from '../../core/database'
 import bcrypt from 'bcryptjs'
 import { PERMISSIONS } from '../../../shared/permissions'
 
-// Estado de sesión simple en memoria (Main Process)
-let currentSession: { id: number; level: number } | null = null
+export class AuthService {
+  // Estado de sesión en memoria (dentro de la instancia)
+  private currentSession: { id: number; level: number } | null = null
 
-const formatName = (text: string): string => {
-  if (!text) return text
-  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
-}
+  private formatName(text: string): string {
+    if (!text) return text
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
+  }
 
-export const AuthService = {
   // --- VERIFICACIÓN DE SEGURIDAD ---
-  getCurrentUser: () => currentSession,
 
-  logout: () => {
-    currentSession = null
+  getCurrentUser() {
+    return this.currentSession
+  }
+
+  logout() {
+    this.currentSession = null
     return { success: true }
-  },
+  }
 
   // Verifica si el usuario logueado tiene el permiso requerido
-  checkPermission: (requiredPerm: string): boolean => {
-    if (!currentSession) return false
-    if (currentSession.level === 1) return true // Admin siempre pasa
+  checkPermission(requiredPerm: string): boolean {
+    if (!this.currentSession) return false
+    if (this.currentSession.level === 1) return true // Admin siempre pasa
 
     try {
       const role = db
         .prepare('SELECT permissions FROM roles WHERE id = ?')
-        .get(currentSession.level) as any
+        .get(this.currentSession.level) as any
       if (!role) return false
 
       const perms = JSON.parse(role.permissions)
@@ -35,40 +38,41 @@ export const AuthService = {
     } catch (e) {
       return false
     }
-  },
+  }
 
   // --- USUARIOS ---
-  login: (usuario: string, password: string) => {
+
+  login(usuario: string, password: string) {
     const user = db.prepare('SELECT * FROM usuarios WHERE usuario = ?').get(usuario) as any
     if (!user) return { success: false, message: 'Usuario no encontrado' }
 
     const match = bcrypt.compareSync(password, user.password)
     if (!match) return { success: false, message: 'Contraseña incorrecta' }
 
-    // GUARDAMOS LA SESIÓN EN BACKEND
-    currentSession = { id: user.id, level: user.level }
+    // GUARDAMOS LA SESIÓN EN MEMORIA
+    this.currentSession = { id: user.id, level: user.level }
 
     db.prepare('UPDATE usuarios SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id)
 
     const { password: _, ...userData } = user
     return { success: true, user: userData }
-  },
+  }
 
-  getUsers: () => {
+  getUsers() {
     return db
       .prepare('SELECT id, nombre, apellido, usuario, level, last_login, created_at FROM usuarios')
       .all()
-  },
+  }
 
-  createUser: (data: any) => {
+  createUser(data: any) {
     // PROTECCIÓN: Solo si tiene permiso de gestionar usuarios
-    if (!AuthService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) {
+    if (!this.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) {
       return { success: false, message: 'No tienes permiso para crear usuarios' }
     }
 
     const { nombre, apellido, usuario, password, level } = data
-    const nombreFmt = formatName(nombre)
-    const apellidoFmt = formatName(apellido)
+    const nombreFmt = this.formatName(nombre)
+    const apellidoFmt = this.formatName(apellido)
 
     try {
       const hashedPassword = bcrypt.hashSync(password, 10)
@@ -84,12 +88,12 @@ export const AuthService = {
       }
       return { success: false, message: 'Error al crear usuario' }
     }
-  },
+  }
 
-  updateUser: (id: number, data: any) => {
+  updateUser(id: number, data: any) {
     // PROTECCIÓN: Permitir si es admin O si se edita a sí mismo
-    const isSelf = currentSession?.id === id
-    const hasPerm = AuthService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)
+    const isSelf = this.currentSession?.id === id
+    const hasPerm = this.checkPermission(PERMISSIONS.PERFIL.USUARIOS)
 
     if (!isSelf && !hasPerm) {
       return { success: false, message: 'No autorizado' }
@@ -100,11 +104,11 @@ export const AuthService = {
 
     if (data.nombre) {
       updates.push('nombre = ?')
-      params.push(formatName(data.nombre))
+      params.push(this.formatName(data.nombre))
     }
     if (data.apellido) {
       updates.push('apellido = ?')
-      params.push(formatName(data.apellido))
+      params.push(this.formatName(data.apellido))
     }
     if (data.usuario) {
       updates.push('usuario = ?')
@@ -112,7 +116,7 @@ export const AuthService = {
     }
     if (data.level) {
       // PROTECCIÓN EXTRA: Solo Admin puede cambiar roles
-      if (!AuthService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) {
+      if (!this.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) {
         return { success: false, message: 'No puedes cambiar el nivel de acceso' }
       }
       updates.push('level = ?')
@@ -131,21 +135,21 @@ export const AuthService = {
       // Actualizamos sesión si nos editamos a nosotros mismos
       if (isSelf && updatedUser) {
         // @ts-ignore
-        currentSession.level = updatedUser.level
+        this.currentSession.level = updatedUser.level
       }
 
       return { success: true, user: updatedUser }
     } catch (error) {
       return { success: false, message: 'Error al actualizar' }
     }
-  },
+  }
 
-  deleteUser: (id: number) => {
-    if (!AuthService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) {
+  deleteUser(id: number) {
+    if (!this.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) {
       return { success: false, message: 'No autorizado' }
     }
 
-    if (currentSession?.id === id) {
+    if (this.currentSession?.id === id) {
       return { success: false, message: 'No puedes eliminarte a ti mismo' }
     }
 
@@ -155,11 +159,11 @@ export const AuthService = {
     } catch (error) {
       return { success: false, message: 'Error al eliminar' }
     }
-  },
+  }
 
-  changePassword: (id: number, currentPass: string, newPass: string) => {
+  changePassword(id: number, currentPass: string, newPass: string) {
     // Solo permitirse cambiarse a uno mismo
-    if (currentSession?.id !== id) {
+    if (this.currentSession?.id !== id) {
       return { success: false, message: 'No autorizado' }
     }
 
@@ -173,17 +177,18 @@ export const AuthService = {
     const hashedNew = bcrypt.hashSync(newPass, 10)
     db.prepare('UPDATE usuarios SET password = ? WHERE id = ?').run(hashedNew, id)
     return { success: true }
-  },
+  }
 
   // --- ROLES ---
-  getRoles: () => {
+
+  getRoles() {
     const roles = db.prepare('SELECT * FROM roles ORDER BY id ASC').all() as any[]
     return roles.map((r) => ({ ...r, permissions: JSON.parse(r.permissions) }))
-  },
+  }
 
-  updateRole: (id: number, label: string, permissions: string[]) => {
+  updateRole(id: number, label: string, permissions: string[]) {
     // Solo ADMIN (Nivel 1) puede tocar roles.
-    if (!currentSession || currentSession.level !== 1) {
+    if (!this.currentSession || this.currentSession.level !== 1) {
       return { success: false, message: 'Solo el administrador puede editar roles' }
     }
 
@@ -196,3 +201,6 @@ export const AuthService = {
     return { success: true }
   }
 }
+
+// Exportamos la instancia única (Singleton)
+export const authService = new AuthService()

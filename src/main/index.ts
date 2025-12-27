@@ -10,8 +10,8 @@ import { setupWindowIPC } from './core/window.ipc' // <--- 1. IMPORTAR ESTO
 
 // Importar Módulos
 import { AuthModule } from './modules/auth'
-import { shiftModule } from './modules/shift'
-import { initSettingsModule } from './modules/settings'
+import { ShiftModule } from './modules/shift'
+import { SettingsModule } from './modules/settings'
 import { CustomersModule } from './modules/customers'
 import { ServicesModule } from './modules/services'
 
@@ -47,8 +47,8 @@ function createWindow(): void {
   AuthModule.init()
   ServicesModule.init()
   CustomersModule.init()
-  shiftModule.init()
-  initSettingsModule()
+  ShiftModule.init()
+  SettingsModule.init()
 
   // --- SISTEMAS CORE ---
   setupBackupSystem(mainWindow)

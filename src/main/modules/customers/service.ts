@@ -9,11 +9,11 @@ export interface CustomerData {
 }
 
 export class CustomerService {
-  static getAll() {
+  getAll() {
     return db.prepare('SELECT * FROM customers ORDER BY nombre ASC').all()
   }
 
-  static create(data: CustomerData) {
+  create(data: CustomerData) {
     const stmt = db.prepare(`
       INSERT INTO customers (documento, nombre, apellido, telefono, email)
       VALUES (@documento, @nombre, @apellido, @telefono, @email)
@@ -21,7 +21,7 @@ export class CustomerService {
     return stmt.run(data)
   }
 
-  static update(id: number | string, data: CustomerData) {
+  update(id: string | number, data: CustomerData) {
     const stmt = db.prepare(`
       UPDATE customers
       SET documento = @documento,
@@ -35,7 +35,9 @@ export class CustomerService {
     return stmt.run({ ...data, id })
   }
 
-  static delete(id: number | string) {
+  delete(id: string | number) {
     return db.prepare('DELETE FROM customers WHERE id = ?').run(id)
   }
 }
+
+export const customerService = new CustomerService()

@@ -1,6 +1,6 @@
 import { db } from '../../core/database'
 
-export function createCustomerTable(): void {
+export function initCustomersSchema(): void {
   db.prepare(
     `
     CREATE TABLE IF NOT EXISTS customers (

@@ -1,14 +1,14 @@
 import { ipcMain } from 'electron'
-import { CustomerService, CustomerData } from './service'
+import { customerService, CustomerData } from './service'
 
 export function registerCustomerHandlers(): void {
   ipcMain.handle('customers:getAll', () => {
-    return CustomerService.getAll()
+    return customerService.getAll()
   })
 
   ipcMain.handle('customers:create', (_, data: CustomerData) => {
     try {
-      return CustomerService.create(data)
+      return customerService.create(data)
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new Error('El documento ya existe en la base de datos')
@@ -17,9 +17,9 @@ export function registerCustomerHandlers(): void {
     }
   })
 
-  ipcMain.handle('customers:update', (_, id: string, data: CustomerData) => {
+  ipcMain.handle('customers:update', (_, id: string | number, data: CustomerData) => {
     try {
-      return CustomerService.update(id, data)
+      return customerService.update(id, data)
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new Error('El documento ya pertenece a otro cliente')
@@ -28,7 +28,7 @@ export function registerCustomerHandlers(): void {
     }
   })
 
-  ipcMain.handle('customers:delete', (_, id: string) => {
-    return CustomerService.delete(id)
+  ipcMain.handle('customers:delete', (_, id: string | number) => {
+    return customerService.delete(id)
   })
 }
