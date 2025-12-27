@@ -1,229 +1,169 @@
 import { useState, useEffect } from 'react'
-import { useShifts } from '@shift/hooks/useShifts' // Ruta corregida
-import { ShiftConfig } from '@shift/types' // Ruta corregida
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@ui/card'
 import { Label } from '@ui/label'
 import { Input } from '@ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
-import { Switch } from '@ui/switch'
 import { Button } from '@ui/button'
-import { Save, RotateCcw, Clock, Eye, BarChart3 } from 'lucide-react'
-import { toast } from 'sonner'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
+import { Checkbox } from '@ui/checkbox'
+import { useShifts } from '@shift/hooks/useShifts'
+import { Clock, Calendar, ShieldCheck, Eye } from 'lucide-react'
+import { Separator } from '@ui/separator'
 
 export default function TurnosConfig() {
   const { config, updateConfig } = useShifts()
-
-  // Estado local para buffer de cambios
-  const [localConfig, setLocalConfig] = useState<ShiftConfig>(config)
-  const [hasChanges, setHasChanges] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const [localConfig, setLocalConfig] = useState(config)
+  const [isPending, setIsPending] = useState(false)
 
   useEffect(() => {
-    setLocalConfig(config)
+    if (config) {
+      setLocalConfig(config)
+    }
   }, [config])
 
-  useEffect(() => {
-    const isDifferent = JSON.stringify(localConfig) !== JSON.stringify(config)
-    setHasChanges(isDifferent)
-  }, [localConfig, config])
-
-  // --- HANDLERS ---
-  const handleChange = (key: keyof ShiftConfig, value: any) => {
-    setLocalConfig((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handleThresholdChange = (key: 'low' | 'medium', value: string) => {
-    const numValue = parseInt(value) || 0
-    setLocalConfig((prev) => ({
-      ...prev,
-      thresholds: { ...prev.thresholds, [key]: numValue }
-    }))
-  }
-
   const handleSave = async () => {
-    setIsSaving(true)
+    setIsPending(true)
     try {
       await updateConfig(localConfig)
-      toast.success('Configuración guardada correctamente')
-      setHasChanges(false)
-    } catch (error) {
-      toast.error('Error al guardar')
     } finally {
-      setIsSaving(false)
+      setIsPending(false)
     }
   }
 
-  const handleReset = () => {
-    setLocalConfig(config)
-    setHasChanges(false)
-    toast.info('Cambios revertidos')
-  }
+  if (!localConfig) return null
 
   return (
     <div className="space-y-6">
-      {/* GRID PRINCIPAL */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* TARJETA 1: HORARIOS (Todo en una fila) */}
-        <Card className="xl:col-span-2">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              <CardTitle className="text-base">Horarios de Atención</CardTitle>
-            </div>
-            <CardDescription>Define la franja horaria y la duración de los turnos.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Flex container para poner los 3 elementos en fila */}
-            <div className="flex flex-col sm:flex-row gap-6 items-end">
-              <div className="space-y-2 flex-1 min-w-[120px]">
-                <Label>Apertura</Label>
+      <Card className="border-border/50 shadow-sm">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            <CardTitle>Configuración de Agenda</CardTitle>
+          </div>
+          <CardDescription>
+            Ajusta los horarios y la visibilidad de los turnos en el sistema.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">
+                Hora de Apertura
+              </Label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="time"
+                  className="pl-9"
                   value={localConfig.openingTime}
-                  onChange={(e) => handleChange('openingTime', e.target.value)}
+                  onChange={(e) => setLocalConfig({ ...localConfig, openingTime: e.target.value })}
                 />
               </div>
+            </div>
 
-              <div className="space-y-2 flex-1 min-w-[120px]">
-                <Label>Cierre</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">
+                Hora de Cierre
+              </Label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="time"
+                  className="pl-9"
                   value={localConfig.closingTime}
-                  onChange={(e) => handleChange('closingTime', e.target.value)}
+                  onChange={(e) => setLocalConfig({ ...localConfig, closingTime: e.target.value })}
                 />
               </div>
-
-              <div className="space-y-2 flex-1 min-w-[140px]">
-                <Label>Intervalo</Label>
-                <Select
-                  value={localConfig.interval.toString()}
-                  onValueChange={(val) => handleChange('interval', parseInt(val))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 min</SelectItem>
-                    <SelectItem value="20">20 min</SelectItem>
-                    <SelectItem value="30">30 min</SelectItem>
-                    <SelectItem value="45">45 min</SelectItem>
-                    <SelectItem value="60">60 min</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* TARJETA 2: VISUALIZACIÓN */}
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-primary" />
-              <CardTitle className="text-base">Visualización</CardTitle>
-            </div>
-            <CardDescription>Preferencias del calendario.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="font-normal">Inicio de semana</Label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">
+                Intervalo (Minutos)
+              </Label>
               <Select
-                value={localConfig.startOfWeek}
-                onValueChange={(val) => handleChange('startOfWeek', val)}
+                value={String(localConfig.interval)}
+                onValueChange={(val) => setLocalConfig({ ...localConfig, interval: Number(val) })}
               >
-                <SelectTrigger className="w-[110px] h-8 text-xs">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="monday">Lunes</SelectItem>
-                  <SelectItem value="sunday">Domingo</SelectItem>
+                  <SelectItem value="15">15 minutos</SelectItem>
+                  <SelectItem value="30">30 minutos</SelectItem>
+                  <SelectItem value="45">45 minutos</SelectItem>
+                  <SelectItem value="60">1 hora</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <div className="space-y-0.5">
-                <Label className="text-sm">Ver Historial</Label>
-                <p className="text-[10px] text-muted-foreground">Turnos pasados</p>
-              </div>
-              <Switch
-                className="scale-90"
-                checked={localConfig.showFinishedShifts}
-                onCheckedChange={(checked) => handleChange('showFinishedShifts', checked)}
-              />
-            </div>
-          </CardContent>
-        </Card>
+          <Separator className="bg-border/40" />
 
-        {/* TARJETA 3: INDICADORES (Todo en una fila) */}
-        <Card className="xl:col-span-3">
-          <CardHeader className="pb-4">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              <CardTitle className="text-base">Indicadores de Demanda</CardTitle>
+              <Eye className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-bold uppercase tracking-wider">Visibilidad en Agenda</h3>
             </div>
-            <CardDescription>Umbrales de turnos diarios para el mapa de calor.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Flex container para poner los niveles en fila */}
-            <div className="flex flex-col sm:flex-row gap-8 items-start sm:items-end">
-              {/* Nivel Bajo */}
-              <div className="space-y-2 flex-1 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-sm" />
-                  <Label>Nivel Bajo (Verde)</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="1"
-                    className="font-mono"
-                    value={localConfig.thresholds.low}
-                    onChange={(e) => handleThresholdChange('low', e.target.value)}
-                  />
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">turnos</span>
-                </div>
+            <p className="text-xs text-muted-foreground">
+              Selecciona qué estados deseas visualizar en la lista diaria de turnos.
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+              <div className="flex items-center space-x-2 bg-muted/30 p-3 rounded-md border border-transparent opacity-80">
+                <Checkbox id="vis-pendiente" checked disabled />
+                <Label htmlFor="vis-pendiente" className="text-sm cursor-default">
+                  Pendientes
+                </Label>
               </div>
 
-              {/* Nivel Medio */}
-              <div className="space-y-2 flex-1 w-full sm:w-auto">
-                <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 rounded-full bg-yellow-500 shadow-sm" />
-                  <Label>Nivel Medio (Amarillo)</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={localConfig.thresholds.low + 1}
-                    className="font-mono"
-                    value={localConfig.thresholds.medium}
-                    onChange={(e) => handleThresholdChange('medium', e.target.value)}
-                  />
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">turnos</span>
-                </div>
+              <div className="flex items-center space-x-2 p-3 rounded-md border border-border/50 hover:bg-muted/20 transition-colors">
+                <Checkbox
+                  id="vis-completado"
+                  checked={localConfig.showCompleted}
+                  onCheckedChange={(checked) =>
+                    setLocalConfig({ ...localConfig, showCompleted: !!checked })
+                  }
+                />
+                <Label htmlFor="vis-completado" className="text-sm cursor-pointer">
+                  Completados
+                </Label>
               </div>
 
-              <div className="pb-3 text-xs text-muted-foreground hidden sm:block">
-                * Valores superiores serán Rojo.
+              <div className="flex items-center space-x-2 p-3 rounded-md border border-border/50 hover:bg-muted/20 transition-colors">
+                <Checkbox
+                  id="vis-ausente"
+                  checked={localConfig.showAbsent}
+                  onCheckedChange={(checked) =>
+                    setLocalConfig({ ...localConfig, showAbsent: !!checked })
+                  }
+                />
+                <Label htmlFor="vis-ausente" className="text-sm cursor-pointer">
+                  Ausentes
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2 p-3 rounded-md border border-border/50 hover:bg-muted/20 transition-colors">
+                <Checkbox
+                  id="vis-cancelado"
+                  checked={localConfig.showCancelled}
+                  onCheckedChange={(checked) =>
+                    setLocalConfig({ ...localConfig, showCancelled: !!checked })
+                  }
+                />
+                <Label htmlFor="vis-cancelado" className="text-sm cursor-pointer">
+                  Cancelados
+                </Label>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
-      {/* BOTONES DE ACCIÓN */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t mt-4">
-        {hasChanges && (
-          <Button variant="ghost" onClick={handleReset} disabled={isSaving}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Revertir
-          </Button>
-        )}
-        <Button onClick={handleSave} disabled={!hasChanges || isSaving}>
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-        </Button>
-      </div>
+          <div className="flex justify-end pt-4">
+            <Button onClick={handleSave} disabled={isPending} className="gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              {isPending ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

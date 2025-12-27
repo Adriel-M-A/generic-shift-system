@@ -1,7 +1,7 @@
-// Definimos los estados posibles para evitar errores de tipeo
+// src/renderer/src/modules/shift/types.ts
+
 export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'ausente'
 
-// LO QUE RECIBIMOS (Lectura desde DB - snake_case)
 export interface Shift {
   id: number
   fecha: string
@@ -14,7 +14,6 @@ export interface Shift {
   created_at?: string
 }
 
-// LO QUE ENVIAMOS (Escritura hacia Zod - camelCase)
 export interface NewShiftData {
   fecha?: string
   hora: string
@@ -28,7 +27,9 @@ export interface ShiftConfig {
   closingTime: string
   interval: number
   startOfWeek: 'monday' | 'sunday'
-  showFinishedShifts: boolean
+  showCompleted: boolean
+  showCancelled: boolean
+  showAbsent: boolean
   thresholds: {
     low: number
     medium: number

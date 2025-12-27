@@ -24,11 +24,13 @@ export function initSettingsSchema() {
 
       // Visuales
       ['calendar_start_day', 'monday'],
-      ['threshold_low', '5'],
-      ['threshold_medium', '10'],
+      ['threshold_low', '3'],
+      ['threshold_medium', '7'],
 
-      // Historial
-      ['show_finished_shifts', 'false']
+      // Visibilidad de Estados (Nuevos valores granulares)
+      ['show_completed', 'false'],
+      ['show_cancelled', 'false'],
+      ['show_absent', 'false']
     ]
 
     const transaction = db.transaction((items) => {
