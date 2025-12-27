@@ -1,13 +1,11 @@
 import { ipcMain, BrowserWindow } from 'electron'
 
 export function setupWindowIPC(mainWindow: BrowserWindow): void {
-  // Minimizar
-  ipcMain.on('window-minimize', () => {
+  ipcMain.on('window:minimize', () => {
     mainWindow.minimize()
   })
 
-  // Maximizar / Restaurar
-  ipcMain.on('window-maximize', () => {
+  ipcMain.on('window:maximize', () => {
     if (mainWindow.isMaximized()) {
       mainWindow.unmaximize()
     } else {
@@ -15,19 +13,17 @@ export function setupWindowIPC(mainWindow: BrowserWindow): void {
     }
   })
 
-  // Cerrar
-  ipcMain.on('window-close', () => {
+  ipcMain.on('window:close', () => {
     mainWindow.close()
   })
 
-  // --- Handlers de redimensionado (Opcional, si usas login responsivo) ---
-  ipcMain.on('window:set-login-size', () => {
+  ipcMain.on('window:setLoginSize', () => {
     mainWindow.setSize(400, 600)
     mainWindow.center()
     mainWindow.setResizable(false)
   })
 
-  ipcMain.on('window:set-app-size', () => {
+  ipcMain.on('window:setAppSize', () => {
     mainWindow.setSize(1200, 800)
     mainWindow.setResizable(true)
     mainWindow.center()

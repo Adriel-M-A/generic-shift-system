@@ -1,5 +1,5 @@
 // Definimos los estados posibles para evitar errores de tipeo
-export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'ausente'
+export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'ausente' | 'en_curso'
 
 // LO QUE RECIBIMOS (Lectura desde DB - snake_case)
 export interface Shift {

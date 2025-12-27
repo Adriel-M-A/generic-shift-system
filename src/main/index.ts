@@ -6,7 +6,7 @@ import icon from '../../resources/icon.png?asset'
 import { getDB } from './core/database'
 import { runMigrations } from './core/migrations'
 import { setupBackupSystem } from './core/backup.ipc'
-import { setupWindowIPC } from './core/window.ipc' // <--- 1. IMPORTAR ESTO
+import { setupWindowIPC } from './core/window.ipc'
 
 // Importar Módulos
 import { AuthModule } from './modules/auth'
@@ -21,7 +21,7 @@ function createWindow(): void {
     height: 800,
     show: false,
     autoHideMenuBar: true,
-    frame: false, // Importante: frame false para que tu TitleBar funcione
+    frame: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -54,8 +54,11 @@ function createWindow(): void {
   setupBackupSystem(mainWindow)
   setupWindowIPC(mainWindow) // <--- 2. ACTIVAR LOS BOTONES AQUÍ
 
+  console.log('Cargando URL del Renderer...')
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
