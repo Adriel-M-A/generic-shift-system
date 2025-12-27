@@ -1,8 +1,7 @@
 import { db } from '../../core/database'
 
 export function initCustomersSchema(): void {
-  db.prepare(
-    `
+  db.exec(`
     CREATE TABLE IF NOT EXISTS customers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       documento TEXT NOT NULL UNIQUE,
@@ -10,9 +9,8 @@ export function initCustomersSchema(): void {
       apellido TEXT NOT NULL,
       telefono TEXT,
       email TEXT,
-      created_at TEXT DEFAULT (datetime('now', 'localtime')),
-      updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
-  `
-  ).run()
+  `)
 }

@@ -1,7 +1,7 @@
 import { db } from '../../core/database'
 
 export function initSettingsSchema() {
-  // 1. Crear tabla si no existe
+  // 1. Crear tabla
   db.exec(`
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
@@ -9,7 +9,7 @@ export function initSettingsSchema() {
     )
   `)
 
-  // 2. Insertar configuración por defecto SI la tabla está vacía
+  // 2. Insertar configuración por defecto (Solo si está vacía)
   const count = db.prepare('SELECT count(*) as c FROM settings').get() as any
 
   if (count.c === 0) {
@@ -27,7 +27,7 @@ export function initSettingsSchema() {
       ['threshold_low', '5'],
       ['threshold_medium', '10'],
 
-      // NUEVO: Configuración para ver historial
+      // Historial
       ['show_finished_shifts', 'false']
     ]
 
@@ -36,12 +36,5 @@ export function initSettingsSchema() {
     })
 
     transaction(defaults)
-  } else {
-    // 3. MIGRACIÓN "AL VUELO": (Opcional pero recomendado)
-    // Si la tabla ya existía pero no tenía 'show_finished_shifts', lo agregamos.
-    const hasSetting = db.prepare("SELECT 1 FROM settings WHERE key = 'show_finished_shifts'").get()
-    if (!hasSetting) {
-      db.prepare("INSERT INTO settings (key, value) VALUES ('show_finished_shifts', 'false')").run()
-    }
   }
 }

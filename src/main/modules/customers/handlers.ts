@@ -1,14 +1,22 @@
 import { ipcMain } from 'electron'
-import { customerService, CustomerData } from './service'
+import { customerService } from './service'
+import { CustomerSchema } from './validations'
 
 export function registerCustomerHandlers(): void {
   ipcMain.handle('customers:getAll', () => {
     return customerService.getAll()
   })
 
-  ipcMain.handle('customers:create', (_, data: CustomerData) => {
+  ipcMain.handle('customers:create', (_, rawData) => {
+    const validation = CustomerSchema.safeParse(rawData)
+
+    if (!validation.success) {
+      throw new Error(validation.error.issues[0].message)
+    }
+
     try {
-      return customerService.create(data)
+      // @ts-ignore
+      return customerService.create(validation.data)
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new Error('El documento ya existe en la base de datos')
@@ -17,9 +25,16 @@ export function registerCustomerHandlers(): void {
     }
   })
 
-  ipcMain.handle('customers:update', (_, id: string | number, data: CustomerData) => {
+  ipcMain.handle('customers:update', (_, id, rawData) => {
+    const validation = CustomerSchema.safeParse(rawData)
+
+    if (!validation.success) {
+      throw new Error(validation.error.issues[0].message)
+    }
+
     try {
-      return customerService.update(id, data)
+      // @ts-ignore
+      return customerService.update(id, validation.data)
     } catch (error: any) {
       if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new Error('El documento ya pertenece a otro cliente')
@@ -28,7 +43,7 @@ export function registerCustomerHandlers(): void {
     }
   })
 
-  ipcMain.handle('customers:delete', (_, id: string | number) => {
+  ipcMain.handle('customers:delete', (_, id) => {
     return customerService.delete(id)
   })
 }
