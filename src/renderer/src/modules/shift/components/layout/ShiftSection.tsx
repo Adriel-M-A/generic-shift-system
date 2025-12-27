@@ -42,9 +42,13 @@ export function ShiftSection({
     return shifts
       .filter((s) => {
         const isSameDay = s.fecha === dateKey
+        // AHORA INCLUIMOS 'ausente' EN EL FILTRO
         return (
           isSameDay &&
-          (s.estado === 'pendiente' || s.estado === 'completado' || s.estado === 'en_curso')
+          (s.estado === 'pendiente' ||
+            s.estado === 'completado' ||
+            s.estado === 'ausente' ||
+            s.estado === 'cancelado')
         )
       })
       .sort((a, b) => a.hora.localeCompare(b.hora))

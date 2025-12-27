@@ -1,9 +1,6 @@
 import { z } from 'zod'
 
-// Regex para fecha YYYY-MM-DD
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/
-
-// CORREGIDO: Faltaba la barra inicial '/'
 const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
 
 export const CreateShiftSchema = z.object({
@@ -25,8 +22,7 @@ export const YearlyLoadSchema = z.number().int().min(2000).max(2100)
 
 export const UpdateStatusSchema = z.object({
   id: z.number().int().positive(),
-  // CORREGIDO: Agregamos 'as const' y usamos 'description' o 'invalid_type_error' implícito
-  // Para simplificar y evitar conflictos de versión, dejamos el enum simple primero.
+  // Validamos únicamente los 4 estados permitidos
   estado: z.enum(['pendiente', 'completado', 'cancelado', 'ausente'] as const, {
     message: 'Estado de turno inválido'
   })
