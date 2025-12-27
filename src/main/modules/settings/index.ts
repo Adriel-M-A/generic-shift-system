@@ -1,9 +1,7 @@
-import { initSettingsSchema } from './schema'
 import { registerSettingsHandlers } from './handlers'
+import { initSettingsSchema } from './schema'
 
-export const settingsModule = {
-  init: () => {
-    initSettingsSchema()
-    registerSettingsHandlers()
-  }
+export function initSettingsModule() {
+  initSettingsSchema()
+  registerSettingsHandlers()
 }

@@ -1,273 +1,227 @@
 import { useState, useEffect } from 'react'
-import { Save, Clock, CalendarDays, BarChart3, Info, AlertCircle } from 'lucide-react'
-import { Button } from '@ui/button'
+import { useShifts } from '@shift/hooks/useShifts' // Ruta corregida
+import { ShiftConfig } from '@shift/types' // Ruta corregida
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
 import { Label } from '@ui/label'
 import { Input } from '@ui/input'
-import { RadioGroup, RadioGroupItem } from '@ui/radio-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select'
-import { useShifts } from '../../../shift/hooks/useShifts'
+import { Switch } from '@ui/switch'
+import { Button } from '@ui/button'
+import { Save, RotateCcw, Clock, Eye, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 
-export function TurnosConfig() {
-  // 1. Obtenemos la configuración REAL y la función para actualizar
+export default function TurnosConfig() {
   const { config, updateConfig } = useShifts()
 
-  // 2. Estado local temporal para la edición (para no guardar en cada tecla que tocas en los inputs numéricos)
-  const [visualSettings, setVisualSettings] = useState({
-    startOfWeek: 'monday',
-    thresholds: {
-      low: 5,
-      medium: 10
-    }
-  })
+  // Estado local para buffer de cambios
+  const [localConfig, setLocalConfig] = useState<ShiftConfig>(config)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
-  // 3. EFECTO CLAVE: Sincronizar el estado local con lo que viene de la Base de Datos al cargar
   useEffect(() => {
-    setVisualSettings({
-      startOfWeek: config.startOfWeek || 'monday',
-      thresholds: {
-        low: config.thresholds?.low ?? 5,
-        medium: config.thresholds?.medium ?? 10
-      }
-    })
-  }, [config.startOfWeek, config.thresholds]) // Se ejecuta cuando el contexto termina de cargar la BD
+    setLocalConfig(config)
+  }, [config])
 
-  // 4. Guardar cambios en la Base de Datos
+  useEffect(() => {
+    const isDifferent = JSON.stringify(localConfig) !== JSON.stringify(config)
+    setHasChanges(isDifferent)
+  }, [localConfig, config])
+
+  // --- HANDLERS ---
+  const handleChange = (key: keyof ShiftConfig, value: any) => {
+    setLocalConfig((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleThresholdChange = (key: 'low' | 'medium', value: string) => {
+    const numValue = parseInt(value) || 0
+    setLocalConfig((prev) => ({
+      ...prev,
+      thresholds: { ...prev.thresholds, [key]: numValue }
+    }))
+  }
+
   const handleSave = async () => {
+    setIsSaving(true)
     try {
-      await updateConfig({
-        startOfWeek: visualSettings.startOfWeek as 'monday' | 'sunday',
-        thresholds: visualSettings.thresholds
-      })
-      toast.success('Configuración guardada y aplicada')
+      await updateConfig(localConfig)
+      toast.success('Configuración guardada correctamente')
+      setHasChanges(false)
     } catch (error) {
-      toast.error('Error al guardar la configuración')
+      toast.error('Error al guardar')
+    } finally {
+      setIsSaving(false)
     }
   }
 
+  const handleReset = () => {
+    setLocalConfig(config)
+    setHasChanges(false)
+    toast.info('Cambios revertidos')
+  }
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-10">
-      {/* 1. PREFERENCIAS CALENDARIO */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-primary" />
-            <CardTitle>Visualización del Calendario</CardTitle>
-          </div>
-          <CardDescription>Define cómo se estructura la vista mensual y semanal.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <Label className="text-base font-medium">Inicio de la semana</Label>
-            <RadioGroup
-              value={visualSettings.startOfWeek}
-              onValueChange={(val) => setVisualSettings({ ...visualSettings, startOfWeek: val })}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"
-            >
-              <div>
-                <RadioGroupItem value="monday" id="monday" className="peer sr-only" />
-                <Label
-                  htmlFor="monday"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all shadow-sm"
-                >
-                  <span className="text-lg font-bold mb-1">Lunes</span>
-                  <span className="text-xs text-muted-foreground text-center">
-                    Semana laboral estándar
-                  </span>
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem value="sunday" id="sunday" className="peer sr-only" />
-                <Label
-                  htmlFor="sunday"
-                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-all shadow-sm"
-                >
-                  <span className="text-lg font-bold mb-1">Domingo</span>
-                  <span className="text-xs text-muted-foreground text-center">
-                    Formato tradicional internacional
-                  </span>
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 2. GESTIÓN DE HORARIOS (Estos se guardan directo porque usan el updateConfig inline, pero está bien así) */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            <CardTitle>Horarios de Atención</CardTitle>
-          </div>
-          <CardDescription>
-            Define los límites operativos y la frecuencia de los turnos.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-            <div className="space-y-5">
-              <div className="flex items-center gap-2 pb-1 border-b border-border/40">
-                <h3 className="font-semibold text-sm text-foreground">Rango Operativo</h3>
-              </div>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
-                      Apertura
-                    </Label>
-                    <Input
-                      type="time"
-                      value={config.openingTime}
-                      onChange={(e) => updateConfig({ openingTime: e.target.value })}
-                      className="cursor-pointer"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
-                      Cierre
-                    </Label>
-                    <Input
-                      type="time"
-                      value={config.closingTime}
-                      onChange={(e) => updateConfig({ closingTime: e.target.value })}
-                      className="cursor-pointer"
-                    />
-                  </div>
-                </div>
-                <div className="bg-muted/30 p-3 rounded-md border border-border/50 flex gap-3 text-sm text-muted-foreground">
-                  <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span className="text-xs leading-relaxed">
-                    Estos cambios se guardan automáticamente.
-                  </span>
-                </div>
-              </div>
+    <div className="space-y-6">
+      {/* GRID PRINCIPAL */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* TARJETA 1: HORARIOS (Todo en una fila) */}
+        <Card className="xl:col-span-2">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Horarios de Atención</CardTitle>
             </div>
-
-            <div className="space-y-5 relative">
-              <div className="hidden lg:block absolute -left-6 top-2 bottom-2 w-px bg-border/50"></div>
-              <div className="flex items-center gap-2 pb-1 border-b border-border/40">
-                <h3 className="font-semibold text-sm text-foreground">Frecuencia</h3>
-              </div>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
-                    Bloque (Minutos)
-                  </Label>
-                  <Select
-                    value={config.interval.toString()}
-                    onValueChange={(val) => updateConfig({ interval: parseInt(val) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="15">15 min</SelectItem>
-                      <SelectItem value="20">20 min</SelectItem>
-                      <SelectItem value="30">30 min</SelectItem>
-                      <SelectItem value="45">45 min</SelectItem>
-                      <SelectItem value="60">60 min</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="bg-muted/30 p-3 rounded-md border border-border/50 flex gap-3 text-sm text-muted-foreground">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span className="text-xs leading-relaxed">Define los bloques de la agenda.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 3. INDICADORES DE DEMANDA */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <CardTitle>Indicadores de Demanda</CardTitle>
-          </div>
-          <CardDescription>
-            Configura los umbrales numéricos para los colores del mapa de calor.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {/* Baja */}
-            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border/40 bg-card">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-load-low"></div>
-                <Label className="font-semibold text-sm">Demanda Baja</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Hasta</span>
+            <CardDescription>Define la franja horaria y la duración de los turnos.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Flex container para poner los 3 elementos en fila */}
+            <div className="flex flex-col sm:flex-row gap-6 items-end">
+              <div className="space-y-2 flex-1 min-w-[120px]">
+                <Label>Apertura</Label>
                 <Input
-                  type="number"
-                  className="h-8 w-16 text-center font-mono"
-                  value={visualSettings.thresholds.low}
-                  onChange={(e) =>
-                    setVisualSettings({
-                      ...visualSettings,
-                      thresholds: {
-                        ...visualSettings.thresholds,
-                        low: parseInt(e.target.value) || 0
-                      }
-                    })
-                  }
+                  type="time"
+                  value={localConfig.openingTime}
+                  onChange={(e) => handleChange('openingTime', e.target.value)}
                 />
-                <span className="text-sm text-muted-foreground">turnos</span>
               </div>
-            </div>
 
-            {/* Media */}
-            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border/40 bg-card">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-load-medium"></div>
-                <Label className="font-semibold text-sm">Demanda Media</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Hasta</span>
+              <div className="space-y-2 flex-1 min-w-[120px]">
+                <Label>Cierre</Label>
                 <Input
-                  type="number"
-                  className="h-8 w-16 text-center font-mono"
-                  value={visualSettings.thresholds.medium}
-                  onChange={(e) =>
-                    setVisualSettings({
-                      ...visualSettings,
-                      thresholds: {
-                        ...visualSettings.thresholds,
-                        medium: parseInt(e.target.value) || 0
-                      }
-                    })
-                  }
+                  type="time"
+                  value={localConfig.closingTime}
+                  onChange={(e) => handleChange('closingTime', e.target.value)}
                 />
-                <span className="text-sm text-muted-foreground">turnos</span>
+              </div>
+
+              <div className="space-y-2 flex-1 min-w-[140px]">
+                <Label>Intervalo</Label>
+                <Select
+                  value={localConfig.interval.toString()}
+                  onValueChange={(val) => handleChange('interval', parseInt(val))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">15 min</SelectItem>
+                    <SelectItem value="20">20 min</SelectItem>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="45">45 min</SelectItem>
+                    <SelectItem value="60">60 min</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Alta */}
-            <div className="flex flex-col gap-3 p-4 rounded-lg border border-border/40 bg-card">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-load-high"></div>
-                <Label className="font-semibold text-sm">Demanda Alta</Label>
+        {/* TARJETA 2: VISUALIZACIÓN */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Visualización</CardTitle>
+            </div>
+            <CardDescription>Preferencias del calendario.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="font-normal">Inicio de semana</Label>
+              <Select
+                value={localConfig.startOfWeek}
+                onValueChange={(val) => handleChange('startOfWeek', val)}
+              >
+                <SelectTrigger className="w-[110px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monday">Lunes</SelectItem>
+                  <SelectItem value="sunday">Domingo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <div className="space-y-0.5">
+                <Label className="text-sm">Ver Historial</Label>
+                <p className="text-[10px] text-muted-foreground">Turnos pasados</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Más de</span>
-                <div className="h-8 w-16 flex items-center justify-center font-mono font-bold bg-muted/50 rounded border border-border/50">
-                  {visualSettings.thresholds.medium}
+              <Switch
+                className="scale-90"
+                checked={localConfig.showFinishedShifts}
+                onCheckedChange={(checked) => handleChange('showFinishedShifts', checked)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* TARJETA 3: INDICADORES (Todo en una fila) */}
+        <Card className="xl:col-span-3">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Indicadores de Demanda</CardTitle>
+            </div>
+            <CardDescription>Umbrales de turnos diarios para el mapa de calor.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Flex container para poner los niveles en fila */}
+            <div className="flex flex-col sm:flex-row gap-8 items-start sm:items-end">
+              {/* Nivel Bajo */}
+              <div className="space-y-2 flex-1 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-sm" />
+                  <Label>Nivel Bajo (Verde)</Label>
                 </div>
-                <span className="text-sm text-muted-foreground">turnos</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    className="font-mono"
+                    value={localConfig.thresholds.low}
+                    onChange={(e) => handleThresholdChange('low', e.target.value)}
+                  />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">turnos</span>
+                </div>
+              </div>
+
+              {/* Nivel Medio */}
+              <div className="space-y-2 flex-1 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full bg-yellow-500 shadow-sm" />
+                  <Label>Nivel Medio (Amarillo)</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={localConfig.thresholds.low + 1}
+                    className="font-mono"
+                    value={localConfig.thresholds.medium}
+                    onChange={(e) => handleThresholdChange('medium', e.target.value)}
+                  />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">turnos</span>
+                </div>
+              </div>
+
+              <div className="pb-3 text-xs text-muted-foreground hidden sm:block">
+                * Valores superiores serán Rojo.
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* FOOTER */}
-      <div className="flex justify-end pt-2">
-        <Button onClick={handleSave} className="gap-2 px-8 shadow-sm" size="lg">
-          <Save className="h-4 w-4" /> Guardar Todo
+      {/* BOTONES DE ACCIÓN */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t mt-4">
+        {hasChanges && (
+          <Button variant="ghost" onClick={handleReset} disabled={isSaving}>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Revertir
+          </Button>
+        )}
+        <Button onClick={handleSave} disabled={!hasChanges || isSaving}>
+          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? 'Guardando...' : 'Guardar Cambios'}
         </Button>
       </div>
     </div>

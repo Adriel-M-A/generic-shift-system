@@ -15,6 +15,7 @@
       "@/*": ["src/renderer/src/*"],
       "@core/*": ["src/renderer/src/modules/core/*"],
       "@auth/*": ["src/renderer/src/modules/auth/*"],
+      "@shift/*": ["src/renderer/src/modules/shift/*"],
       "@ui/*": ["src/renderer/src/components/ui/*"],
       "@lib/*": ["src/renderer/src/lib/*"],
       "@config/*": ["src/renderer/src/config/*"]

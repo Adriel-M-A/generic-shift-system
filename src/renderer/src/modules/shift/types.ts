@@ -1,21 +1,17 @@
-export type ViewMode = 'month' | 'year'
-export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'en_curso'
+export type ViewMode = 'day' | 'week' | 'month' | 'year'
+
+export type EstadoTurno = 'pendiente' | 'finalizado' | 'cancelado' | 'en_curso'
 
 export interface Turno {
   id: number
-  fecha: string
   cliente: string
+  fecha: string // YYYY-MM-DD
+  hora: string // HH:mm
   servicio: string
-  hora: string
-  profesional: string
+  customer_id?: number
+  profesional?: string
   estado: EstadoTurno
-  // --- NUEVOS CAMPOS ---
-  customerId?: number | null
-  customerData?: {
-    documento: string
-    telefono?: string
-    email?: string
-  } | null
+  created_at?: string
 }
 
 export interface ShiftStats {
@@ -24,14 +20,23 @@ export interface ShiftStats {
   completados: number
 }
 
+// AGREGADO: showFinishedShifts
 export interface ShiftConfig {
   openingTime: string
   closingTime: string
   interval: number
-  // Configuración Visual
   startOfWeek: 'monday' | 'sunday'
+  showFinishedShifts: boolean
   thresholds: {
     low: number
     medium: number
   }
+}
+
+export interface NewShiftData {
+  cliente: string
+  servicio: string
+  hora: string
+  fecha?: string
+  customerId?: number
 }

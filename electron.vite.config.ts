@@ -19,6 +19,7 @@ export default defineConfig({
         // Alias de Módulos (Domain Driven)
         '@core': resolve('src/renderer/src/modules/core'),
         '@auth': resolve('src/renderer/src/modules/auth'),
+        '@shift': resolve('src/renderer/src/modules/shift'),
 
         // Alias de Utilidades Comunes
         '@ui': resolve('src/renderer/src/components/ui'),

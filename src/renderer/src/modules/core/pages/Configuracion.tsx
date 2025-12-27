@@ -4,7 +4,7 @@ import { useAuth } from '@auth/context/AuthContext'
 // Importamos los sub-componentes
 import Apariencia from './configuracion/Apariencia'
 import Backups from './configuracion/Backups'
-import { TurnosConfig } from './configuracion/TurnosConfig'
+import TurnosConfig from './configuracion/TurnosConfig'
 import TabsSection, { TabDef } from '@ui/TabsSection'
 
 export default function Configuracion() {

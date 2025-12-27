@@ -1,22 +1,17 @@
-import { createContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
-import { Turno, ViewMode, ShiftStats, ShiftConfig, EstadoTurno } from '../types'
+import { Turno, ViewMode, ShiftStats, ShiftConfig, EstadoTurno, NewShiftData } from '../types'
 import { formatDateHeader } from '../utils'
 
-// Datos necesarios para crear un turno
-export interface NewShiftData {
-  cliente: string
-  servicio: string
-  hora: string
-  fecha?: string
-  customerId?: number
-}
+// Exportamos NewShiftData para que otros lo usen si lo necesitan
+export type { NewShiftData }
 
 const DEFAULT_CONFIG: ShiftConfig = {
   openingTime: '08:00',
   closingTime: '20:00',
   interval: 30,
   startOfWeek: 'monday',
+  showFinishedShifts: false, // Por defecto ocultamos el historial antiguo
   thresholds: {
     low: 5,
     medium: 10
@@ -24,23 +19,23 @@ const DEFAULT_CONFIG: ShiftConfig = {
 }
 
 export interface ShiftContextType {
-  // Estado
   currentDate: Date
   setCurrentDate: (date: Date) => void
   viewMode: ViewMode
   setViewMode: (mode: ViewMode) => void
-  shifts: Turno[]
+
+  shifts: Turno[] // Turnos filtrados listos para usar
+  allShifts: Turno[] // Turnos crudos (por si acaso)
+
   loading: boolean
   stats: ShiftStats
   config: ShiftConfig
 
-  // Acciones
   addShift: (data: NewShiftData) => Promise<boolean>
   changeShiftStatus: (id: number, status: EstadoTurno) => Promise<void>
   refreshShifts: () => Promise<void>
   updateConfig: (newConfig: Partial<ShiftConfig>) => Promise<void>
 
-  // Helpers
   getDailyLoad: (date: Date) => number
   formatDateHeader: (d: Date) => string
 }
@@ -50,15 +45,13 @@ export const ShiftContext = createContext<ShiftContextType | undefined>(undefine
 export function ShiftProvider({ children }: { children: ReactNode }) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('month')
-  const [shifts, setShifts] = useState<Turno[]>([])
+
+  const [rawShifts, setRawShifts] = useState<Turno[]>([]) // Datos crudos del backend
   const [loading, setLoading] = useState(false)
-
-  // CAMBIO: Ahora almacenamos la carga de TODO el año
   const [workloadMap, setWorkloadMap] = useState<Record<string, number>>({})
-
   const [config, setConfig] = useState<ShiftConfig>(DEFAULT_CONFIG)
 
-  // 1. CARGAR CONFIGURACIÓN AL INICIO
+  // 1. CARGAR CONFIGURACIÓN
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -69,6 +62,8 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
             closingTime: settings.shift_closing || '20:00',
             interval: parseInt(settings.shift_interval || '30'),
             startOfWeek: (settings.calendar_start_day as 'monday' | 'sunday') || 'monday',
+            // Convertimos el string "true"/"false" a booleano
+            showFinishedShifts: settings.show_finished_shifts === 'true',
             thresholds: {
               low: parseInt(settings.threshold_low || '5'),
               medium: parseInt(settings.threshold_medium || '10')
@@ -82,14 +77,15 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
     loadSettings()
   }, [])
 
-  // 2. OBTENER TURNOS DEL DÍA SELECCIONADO
+  // 2. OBTENER TURNOS (Trae TODO del backend)
   const fetchDailyShifts = useCallback(async () => {
     if (!currentDate) return
     try {
       setLoading(true)
       const dateStr = format(currentDate, 'yyyy-MM-dd')
+      // Asumimos que el backend arreglado devuelve TODOS (pendientes, finalizados, cancelados)
       const data = await window.api.shift.getByDate(dateStr)
-      setShifts(data)
+      setRawShifts(data)
     } catch (error) {
       console.error(error)
     } finally {
@@ -97,15 +93,11 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
     }
   }, [currentDate])
 
-  // 3. OBTENER CARGA DE TRABAJO DE TODO EL AÑO (NUEVO)
-  // Se ejecuta solo cuando cambia el AÑO de currentDate
   const fetchYearlyLoad = useCallback(async () => {
     if (!currentDate) return
     try {
       const year = currentDate.getFullYear()
-      // Usamos la nueva API getYearlyLoad que creamos en el backend
       const data = await window.api.shift.getYearlyLoad(year)
-
       const loadMap: Record<string, number> = {}
       data.forEach((item: any) => {
         loadMap[item.fecha] = item.count
@@ -114,32 +106,33 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error cargando heatmap anual:', error)
     }
-  }, [currentDate.getFullYear()]) // Dependencia: solo el año
+  }, [currentDate.getFullYear()])
 
-  // Función pública para refrescar datos
   const refreshShifts = async () => {
-    // Ejecutamos ambas en paralelo para velocidad
     await Promise.all([fetchDailyShifts(), fetchYearlyLoad()])
   }
 
-  // Efecto principal: Recargar cuando cambia la fecha o el año
   useEffect(() => {
-    // fetchDailyShifts tiene dependencia 'currentDate' completa
     fetchDailyShifts()
-
-    // fetchYearlyLoad tiene dependencia 'year', así que solo se dispara si cambias de año
     fetchYearlyLoad()
   }, [fetchDailyShifts, fetchYearlyLoad])
+
+  // --- FILTRADO INTELIGENTE (MEMOIZED) ---
+  // Esto es lo que consume la UI. Si cambia el config.showFinishedShifts, se recalcula al instante.
+  const processedShifts = useMemo(() => {
+    if (config.showFinishedShifts) {
+      return rawShifts
+    }
+    // Si está desactivado, filtramos los finalizados y cancelados
+    return rawShifts.filter((t) => t.estado !== 'finalizado' && t.estado !== 'cancelado')
+  }, [rawShifts, config.showFinishedShifts])
 
   // --- ACCIONES ---
 
   const addShift = async (data: NewShiftData): Promise<boolean> => {
     try {
       const dateStr = data.fecha || format(currentDate, 'yyyy-MM-dd')
-      await window.api.shift.create({
-        ...data,
-        fecha: dateStr
-      })
+      await window.api.shift.create({ ...data, fecha: dateStr })
       await refreshShifts()
       return true
     } catch (error) {
@@ -151,7 +144,6 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
   const changeShiftStatus = async (id: number, newStatus: EstadoTurno) => {
     try {
       await window.api.shift.updateStatus({ id, estado: newStatus })
-      // Al cambiar estado (ej. cancelar), necesitamos actualizar el conteo visual
       await refreshShifts()
     } catch (error) {
       console.error(error)
@@ -165,6 +157,11 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
       if (newConfig.closingTime) settingsToSave['shift_closing'] = newConfig.closingTime
       if (newConfig.interval) settingsToSave['shift_interval'] = newConfig.interval.toString()
       if (newConfig.startOfWeek) settingsToSave['calendar_start_day'] = newConfig.startOfWeek
+
+      // Guardamos el booleano como string
+      if (newConfig.showFinishedShifts !== undefined)
+        settingsToSave['show_finished_shifts'] = String(newConfig.showFinishedShifts)
+
       if (newConfig.thresholds) {
         if (newConfig.thresholds.low)
           settingsToSave['threshold_low'] = newConfig.thresholds.low.toString()
@@ -184,15 +181,12 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // --- COMPUTADOS ---
-
   const stats: ShiftStats = {
-    total: shifts.length,
-    pendientes: shifts.filter((t) => t.estado === 'pendiente' || t.estado === 'en_curso').length,
-    completados: shifts.filter((t) => t.estado === 'completado').length
+    total: rawShifts.length,
+    pendientes: rawShifts.filter((t) => t.estado === 'pendiente' || t.estado === 'en_curso').length,
+    completados: rawShifts.filter((t) => t.estado === 'finalizado').length
   }
 
-  // Este helper ahora busca en el mapa anual
   const getDailyLoad = (d: Date) => {
     const dateKey = format(d, 'yyyy-MM-dd')
     return workloadMap[dateKey] || 0
@@ -205,7 +199,8 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
         setCurrentDate,
         viewMode,
         setViewMode,
-        shifts,
+        shifts: processedShifts, // Enviamos los filtrados por defecto
+        allShifts: rawShifts, // Enviamos los crudos por si acaso
         loading,
         addShift,
         changeShiftStatus,
