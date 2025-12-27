@@ -16,6 +16,7 @@
       "@core/*": ["src/renderer/src/modules/core/*"],
       "@auth/*": ["src/renderer/src/modules/auth/*"],
       "@shift/*": ["src/renderer/src/modules/shift/*"],
+      "@customers/*": ["src/renderer/src/modules/customers/*"],
       "@ui/*": ["src/renderer/src/components/ui/*"],
       "@lib/*": ["src/renderer/src/lib/*"],
       "@config/*": ["src/renderer/src/config/*"]

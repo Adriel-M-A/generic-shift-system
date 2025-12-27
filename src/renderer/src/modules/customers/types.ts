@@ -5,6 +5,13 @@ export interface Customer {
   apellido: string
   telefono?: string
   email?: string
+  created_at?: string
 }
 
-export type CustomerFormData = Omit<Customer, 'id'>
+export interface CustomerFormData {
+  documento: string
+  nombre: string
+  apellido: string
+  telefono?: string
+  email?: string
+}

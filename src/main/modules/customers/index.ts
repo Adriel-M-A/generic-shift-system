@@ -1,9 +1,9 @@
-import { createCustomerTable } from './schema'
+import { initCustomersSchema } from './schema'
 import { registerCustomerHandlers } from './handlers'
 
 export const CustomersModule = {
   init: () => {
-    createCustomerTable()
+    initCustomersSchema()
     registerCustomerHandlers()
   }
 }

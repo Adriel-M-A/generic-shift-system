@@ -1,218 +1,177 @@
-import { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react'
-import { format } from 'date-fns'
-import { Turno, ViewMode, ShiftStats, ShiftConfig, EstadoTurno, NewShiftData } from '../types'
-import { formatDateHeader } from '../utils'
+import React, { createContext, useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
+import { Shift, NewShiftData, ShiftConfig, EstadoTurno } from '../types'
+import { parseError } from '@lib/error-utils'
 
-// Exportamos NewShiftData para que otros lo usen si lo necesitan
-export type { NewShiftData }
+interface ShiftContextType {
+  // Estado
+  currentDate: Date
+  view: 'month' | 'year'
+  shifts: Shift[]
+  loading: boolean
+  config: ShiftConfig
 
+  // Acciones
+  changeDate: (date: Date) => void
+  changeView: (view: 'month' | 'year') => void
+  addShift: (data: NewShiftData) => Promise<void>
+  changeShiftStatus: (id: number, estado: EstadoTurno) => Promise<void>
+  updateConfig: (newConfig: ShiftConfig) => Promise<void>
+  refreshShifts: () => void
+}
+
+const ShiftContext = createContext<ShiftContextType | undefined>(undefined)
+
+// Configuración por defecto para evitar pantallas blancas si falla la carga inicial
 const DEFAULT_CONFIG: ShiftConfig = {
   openingTime: '08:00',
   closingTime: '20:00',
   interval: 30,
   startOfWeek: 'monday',
-  showFinishedShifts: false, // Por defecto ocultamos el historial antiguo
-  thresholds: {
-    low: 5,
-    medium: 10
-  }
+  showFinishedShifts: false,
+  thresholds: { low: 5, medium: 10 }
 }
 
-export interface ShiftContextType {
-  currentDate: Date
-  setCurrentDate: (date: Date) => void
-  viewMode: ViewMode
-  setViewMode: (mode: ViewMode) => void
-
-  shifts: Turno[] // Turnos filtrados listos para usar
-  allShifts: Turno[] // Turnos crudos (por si acaso)
-
-  loading: boolean
-  stats: ShiftStats
-  config: ShiftConfig
-
-  addShift: (data: NewShiftData) => Promise<boolean>
-  changeShiftStatus: (id: number, status: EstadoTurno) => Promise<void>
-  refreshShifts: () => Promise<void>
-  updateConfig: (newConfig: Partial<ShiftConfig>) => Promise<void>
-
-  getDailyLoad: (date: Date) => number
-  formatDateHeader: (d: Date) => string
-}
-
-export const ShiftContext = createContext<ShiftContextType | undefined>(undefined)
-
-export function ShiftProvider({ children }: { children: ReactNode }) {
+export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
-
-  const [rawShifts, setRawShifts] = useState<Turno[]>([]) // Datos crudos del backend
+  const [view, setView] = useState<'month' | 'year'>('month')
+  const [shifts, setShifts] = useState<Shift[]>([])
   const [loading, setLoading] = useState(false)
-  const [workloadMap, setWorkloadMap] = useState<Record<string, number>>({})
   const [config, setConfig] = useState<ShiftConfig>(DEFAULT_CONFIG)
 
-  // 1. CARGAR CONFIGURACIÓN
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const settings = await window.api.settings.getAll()
-        if (settings) {
-          setConfig({
-            openingTime: settings.shift_opening || '08:00',
-            closingTime: settings.shift_closing || '20:00',
-            interval: parseInt(settings.shift_interval || '30'),
-            startOfWeek: (settings.calendar_start_day as 'monday' | 'sunday') || 'monday',
-            // Convertimos el string "true"/"false" a booleano
-            showFinishedShifts: settings.show_finished_shifts === 'true',
-            thresholds: {
-              low: parseInt(settings.threshold_low || '5'),
-              medium: parseInt(settings.threshold_medium || '10')
-            }
-          })
-        }
-      } catch (e) {
-        console.error('Error cargando configuración:', e)
-      }
-    }
-    loadSettings()
-  }, [])
+  // --- Helpers ---
 
-  // 2. OBTENER TURNOS (Trae TODO del backend)
-  const fetchDailyShifts = useCallback(async () => {
-    if (!currentDate) return
+  // Convierte Date a 'YYYY-MM-DD' usando la hora local (evita problemas de UTC)
+  const toLocalISODate = (d: Date): string => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // --- Carga de Datos ---
+
+  const loadConfig = async () => {
     try {
-      setLoading(true)
-      const dateStr = format(currentDate, 'yyyy-MM-dd')
-      // Asumimos que el backend arreglado devuelve TODOS (pendientes, finalizados, cancelados)
-      const data = await window.api.shift.getByDate(dateStr)
-      setRawShifts(data)
+      const settings = await window.api.settings.getAll()
+      // Mapeamos los settings planos (key-value) al objeto ShiftConfig
+      const mappedConfig: ShiftConfig = {
+        openingTime: settings.shift_opening || DEFAULT_CONFIG.openingTime,
+        closingTime: settings.shift_closing || DEFAULT_CONFIG.closingTime,
+        interval: Number(settings.shift_interval) || DEFAULT_CONFIG.interval,
+        startOfWeek: (settings.calendar_start_day as any) || DEFAULT_CONFIG.startOfWeek,
+        showFinishedShifts: settings.show_finished_shifts === 'true',
+        thresholds: {
+          low: Number(settings.threshold_low) || DEFAULT_CONFIG.thresholds.low,
+          medium: Number(settings.threshold_medium) || DEFAULT_CONFIG.thresholds.medium
+        }
+      }
+      setConfig(mappedConfig)
+    } catch (error) {
+      console.error('Error cargando configuración:', error)
+    }
+  }
+
+  const fetchShifts = useCallback(async () => {
+    setLoading(true)
+    try {
+      const dateStr = toLocalISODate(currentDate)
+      const result = await window.api.shift.getByDate(dateStr)
+      setShifts(result)
     } catch (error) {
       console.error(error)
+      toast.error('No se pudieron cargar los turnos')
+      setShifts([])
     } finally {
       setLoading(false)
     }
   }, [currentDate])
 
-  const fetchYearlyLoad = useCallback(async () => {
-    if (!currentDate) return
-    try {
-      const year = currentDate.getFullYear()
-      const data = await window.api.shift.getYearlyLoad(year)
-      const loadMap: Record<string, number> = {}
-      data.forEach((item: any) => {
-        loadMap[item.fecha] = item.count
-      })
-      setWorkloadMap(loadMap)
-    } catch (error) {
-      console.error('Error cargando heatmap anual:', error)
-    }
-  }, [currentDate.getFullYear()])
-
-  const refreshShifts = async () => {
-    await Promise.all([fetchDailyShifts(), fetchYearlyLoad()])
-  }
-
+  // Carga inicial
   useEffect(() => {
-    fetchDailyShifts()
-    fetchYearlyLoad()
-  }, [fetchDailyShifts, fetchYearlyLoad])
+    loadConfig()
+  }, [])
 
-  // --- FILTRADO INTELIGENTE (MEMOIZED) ---
-  // Esto es lo que consume la UI. Si cambia el config.showFinishedShifts, se recalcula al instante.
-  const processedShifts = useMemo(() => {
-    if (config.showFinishedShifts) {
-      return rawShifts
+  // Recargar turnos cuando cambia la fecha seleccionada
+  useEffect(() => {
+    fetchShifts()
+  }, [fetchShifts])
+
+  // --- Acciones ---
+
+  const changeDate = (date: Date) => {
+    setCurrentDate(date)
+  }
+
+  const changeView = (newView: 'month' | 'year') => {
+    setView(newView)
+  }
+
+  const addShift = async (data: NewShiftData) => {
+    // Si no viene fecha en el objeto, usamos la fecha seleccionada actualmente
+    const shiftData = {
+      ...data,
+      fecha: data.fecha || toLocalISODate(currentDate)
     }
-    // Si está desactivado, filtramos los finalizados y cancelados
-    return rawShifts.filter((t) => t.estado !== 'finalizado' && t.estado !== 'cancelado')
-  }, [rawShifts, config.showFinishedShifts])
 
-  // --- ACCIONES ---
-
-  const addShift = async (data: NewShiftData): Promise<boolean> => {
     try {
-      const dateStr = data.fecha || format(currentDate, 'yyyy-MM-dd')
-      await window.api.shift.create({ ...data, fecha: dateStr })
-      await refreshShifts()
-      return true
+      await window.api.shift.create(shiftData)
+      fetchShifts()
     } catch (error) {
-      console.error(error)
-      throw error
+      throw new Error(parseError(error))
     }
   }
 
-  const changeShiftStatus = async (id: number, newStatus: EstadoTurno) => {
+  const changeShiftStatus = async (id: number, estado: EstadoTurno) => {
     try {
-      await window.api.shift.updateStatus({ id, estado: newStatus })
-      await refreshShifts()
+      await window.api.shift.updateStatus({ id, estado })
+      setShifts((prev) => prev.map((s) => (s.id === id ? { ...s, estado } : s)))
     } catch (error) {
-      console.error(error)
+      fetchShifts()
+      throw new Error(parseError(error))
     }
   }
 
-  const updateConfig = async (newConfig: Partial<ShiftConfig>) => {
+  const updateConfig = async (newConfig: ShiftConfig) => {
     try {
-      const settingsToSave: Record<string, string> = {}
-      if (newConfig.openingTime) settingsToSave['shift_opening'] = newConfig.openingTime
-      if (newConfig.closingTime) settingsToSave['shift_closing'] = newConfig.closingTime
-      if (newConfig.interval) settingsToSave['shift_interval'] = newConfig.interval.toString()
-      if (newConfig.startOfWeek) settingsToSave['calendar_start_day'] = newConfig.startOfWeek
-
-      // Guardamos el booleano como string
-      if (newConfig.showFinishedShifts !== undefined)
-        settingsToSave['show_finished_shifts'] = String(newConfig.showFinishedShifts)
-
-      if (newConfig.thresholds) {
-        if (newConfig.thresholds.low)
-          settingsToSave['threshold_low'] = newConfig.thresholds.low.toString()
-        if (newConfig.thresholds.medium)
-          settingsToSave['threshold_medium'] = newConfig.thresholds.medium.toString()
+      // CORRECCIÓN: Convertimos explícitamente a String los valores numéricos y booleanos
+      const settingsToSave = {
+        shift_opening: newConfig.openingTime,
+        shift_closing: newConfig.closingTime,
+        shift_interval: String(newConfig.interval),
+        calendar_start_day: newConfig.startOfWeek,
+        threshold_low: String(newConfig.thresholds.low),
+        threshold_medium: String(newConfig.thresholds.medium),
+        show_finished_shifts: String(newConfig.showFinishedShifts)
       }
 
       await window.api.settings.setMany(settingsToSave)
-
-      setConfig((prev) => ({
-        ...prev,
-        ...newConfig,
-        thresholds: { ...prev.thresholds, ...(newConfig.thresholds || {}) }
-      }))
-    } catch (e) {
-      console.error('Error guardando configuración:', e)
+      setConfig(newConfig)
+    } catch (error) {
+      throw new Error(parseError(error))
     }
-  }
-
-  const stats: ShiftStats = {
-    total: rawShifts.length,
-    pendientes: rawShifts.filter((t) => t.estado === 'pendiente' || t.estado === 'en_curso').length,
-    completados: rawShifts.filter((t) => t.estado === 'finalizado').length
-  }
-
-  const getDailyLoad = (d: Date) => {
-    const dateKey = format(d, 'yyyy-MM-dd')
-    return workloadMap[dateKey] || 0
   }
 
   return (
     <ShiftContext.Provider
       value={{
         currentDate,
-        setCurrentDate,
-        viewMode,
-        setViewMode,
-        shifts: processedShifts, // Enviamos los filtrados por defecto
-        allShifts: rawShifts, // Enviamos los crudos por si acaso
+        view,
+        shifts,
         loading,
+        config,
+        changeDate,
+        changeView,
         addShift,
         changeShiftStatus,
-        refreshShifts,
-        stats,
-        getDailyLoad,
-        formatDateHeader,
-        config,
-        updateConfig
+        updateConfig,
+        refreshShifts: fetchShifts
       }}
     >
       {children}
     </ShiftContext.Provider>
   )
 }
+
+export { ShiftContext }
+export type { ShiftContextType }

@@ -1,26 +1,28 @@
-export type ViewMode = 'day' | 'week' | 'month' | 'year'
+// Definimos los estados posibles para evitar errores de tipeo
+export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'ausente'
 
-export type EstadoTurno = 'pendiente' | 'finalizado' | 'cancelado' | 'en_curso'
-
-export interface Turno {
+// LO QUE RECIBIMOS (Lectura desde DB - snake_case)
+export interface Shift {
   id: number
+  fecha: string
+  hora: string
   cliente: string
-  fecha: string // YYYY-MM-DD
-  hora: string // HH:mm
   servicio: string
-  customer_id?: number
-  profesional?: string
   estado: EstadoTurno
+  profesional?: string
+  customer_id?: number | null
   created_at?: string
 }
 
-export interface ShiftStats {
-  total: number
-  pendientes: number
-  completados: number
+// LO QUE ENVIAMOS (Escritura hacia Zod - camelCase)
+export interface NewShiftData {
+  fecha?: string
+  hora: string
+  cliente: string
+  servicio: string
+  customerId?: number
 }
 
-// AGREGADO: showFinishedShifts
 export interface ShiftConfig {
   openingTime: string
   closingTime: string
@@ -31,12 +33,4 @@ export interface ShiftConfig {
     low: number
     medium: number
   }
-}
-
-export interface NewShiftData {
-  cliente: string
-  servicio: string
-  hora: string
-  fecha?: string
-  customerId?: number
 }

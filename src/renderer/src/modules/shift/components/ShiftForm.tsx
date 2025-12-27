@@ -8,7 +8,7 @@ import {
   ChevronUp,
   Check,
   Search,
-  User
+  User as UserIcon
 } from 'lucide-react'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
@@ -23,26 +23,26 @@ import {
   DialogTrigger
 } from '@ui/dialog'
 import { TimePicker } from '@ui/time-picker'
-import { useShifts, NewShiftData } from '../hooks/useShifts'
+import { useShifts } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
+import { Customer } from '@customers/types'
 
 interface ShiftFormProps {
   currentDate: Date | undefined
-  onSave: (data: NewShiftData) => void
   formatDateHeader: (d: Date) => string
 }
 
-export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormProps) {
-  const { config } = useShifts()
+export function ShiftForm({ currentDate, formatDateHeader }: ShiftFormProps) {
+  const { config, createShift } = useShifts()
 
   const [open, setOpen] = useState(false)
   const [isServiceOpen, setIsServiceOpen] = useState(false)
   const serviceWrapperRef = useRef<HTMLDivElement>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [time, setTime] = useState(config.openingTime || '09:00')
-
   const [availableServices, setAvailableServices] = useState<string[]>([])
-  const [customers, setCustomers] = useState<any[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([]) // Tipado correcto
 
   const [searchDoc, setSearchDoc] = useState('')
   const [formData, setFormData] = useState<{ cliente: string; servicio: string }>({
@@ -50,12 +50,12 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
     servicio: ''
   })
 
+  // Sincronizar hora inicial con configuración
   useEffect(() => {
-    if (config.openingTime) {
-      setTime(config.openingTime)
-    }
+    if (config.openingTime) setTime(config.openingTime)
   }, [config.openingTime])
 
+  // Cargar datos al abrir el modal
   useEffect(() => {
     async function fetchData() {
       try {
@@ -68,23 +68,22 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
           .filter((s: any) => s.activo === 1)
           .map((s: any) => s.nombre)
         setAvailableServices(activeServiceNames)
-
         setCustomers(customersData)
       } catch (error) {
         console.error('Error cargando datos:', error)
       }
     }
 
-    if (open) {
-      fetchData()
-    }
+    if (open) fetchData()
   }, [open])
 
+  // Buscar cliente automáticamente
   const foundCustomer = useMemo(() => {
     if (!searchDoc) return null
     return customers.find((c) => c.documento === searchDoc)
   }, [searchDoc, customers])
 
+  // Autocompletar nombre si se encuentra cliente
   useEffect(() => {
     if (foundCustomer) {
       setFormData((prev) => ({
@@ -92,19 +91,21 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
         cliente: `${foundCustomer.apellido} ${foundCustomer.nombre}`
       }))
     } else {
-      setFormData((prev) => ({ ...prev, cliente: '' }))
+      // Solo limpiamos si el usuario no ha escrito nada manual
+      if (searchDoc === '') {
+        setFormData((prev) => ({ ...prev, cliente: '' }))
+      }
     }
-  }, [foundCustomer])
+  }, [foundCustomer, searchDoc])
 
+  // Cerrar dropdown de servicios al hacer click fuera
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (serviceWrapperRef.current && !serviceWrapperRef.current.contains(event.target as Node)) {
         setIsServiceOpen(false)
       }
     }
-    if (isServiceOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
+    if (isServiceOpen) document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isServiceOpen])
 
@@ -114,20 +115,28 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
     )
   }, [formData.servicio, availableServices])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsSubmitting(true)
 
-    onSave({
+    const success = await createShift({
       cliente: formData.cliente,
       servicio: formData.servicio,
-      hora: time
+      hora: time,
+      // AQUÍ ESTÁ LA CLAVE: Enviamos el ID si existe
+      customerId: foundCustomer ? foundCustomer.id : undefined
     })
 
-    setOpen(false)
-    setFormData({ cliente: '', servicio: '' })
-    setSearchDoc('')
-    setTime(config.openingTime)
-    setIsServiceOpen(false)
+    setIsSubmitting(false)
+
+    if (success) {
+      setOpen(false)
+      // Resetear formulario
+      setFormData({ cliente: '', servicio: '' })
+      setSearchDoc('')
+      setTime(config.openingTime)
+      setIsServiceOpen(false)
+    }
   }
 
   const dateStr = currentDate ? formatDateHeader(currentDate) : 'la fecha seleccionada'
@@ -157,6 +166,7 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
           </DialogHeader>
 
           <div className="grid gap-5 py-1">
+            {/* HORARIO */}
             <div className="grid gap-2">
               <Label className="flex items-center gap-2 text-muted-foreground font-medium text-sm">
                 <Clock className="h-3.5 w-3.5" /> Horario
@@ -168,12 +178,9 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
                 minTime={config.openingTime}
                 maxTime={config.closingTime}
               />
-              <p className="text-[10px] text-muted-foreground">
-                * Turnos cada {config.interval} minutos entre {config.openingTime} y{' '}
-                {config.closingTime}.
-              </p>
             </div>
 
+            {/* SERVICIO (Autocompletado) */}
             <div className="grid gap-2 relative z-50" ref={serviceWrapperRef}>
               <Label
                 htmlFor="servicio"
@@ -181,7 +188,6 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
               >
                 <Briefcase className="h-3.5 w-3.5" /> Servicio
               </Label>
-
               <div className="relative">
                 <Input
                   id="servicio"
@@ -246,6 +252,7 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
               </div>
             </div>
 
+            {/* CLIENTE (Buscador DNI + Nombre) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label
@@ -259,10 +266,7 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
                     id="searchDoc"
                     placeholder="Buscar DNI..."
                     value={searchDoc}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9]/g, '')
-                      setSearchDoc(value)
-                    }}
+                    onChange={(e) => setSearchDoc(e.target.value.replace(/[^0-9]/g, ''))}
                     className="h-10 pl-9"
                     autoComplete="off"
                     maxLength={15}
@@ -276,32 +280,35 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
                   htmlFor="cliente"
                   className="flex items-center gap-2 text-muted-foreground font-medium text-sm"
                 >
-                  <User className="h-3.5 w-3.5" /> Nombre del Cliente
+                  <UserIcon className="h-3.5 w-3.5" /> Nombre del Cliente
                 </Label>
                 <div className="relative">
                   <Input
                     id="cliente"
                     placeholder={searchDoc ? 'No encontrado' : 'Buscar documento...'}
                     value={formData.cliente}
-                    readOnly={true}
-                    tabIndex={-1}
+                    onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
+                    // Si encontramos cliente, bloqueamos la edición manual del nombre para forzar consistencia
+                    readOnly={!!foundCustomer}
                     className={cn(
-                      'h-10 pl-9 bg-muted text-muted-foreground cursor-not-allowed border-muted',
-                      foundCustomer && 'bg-emerald-50/50 text-foreground border-emerald-200'
+                      'h-10 pl-9',
+                      foundCustomer
+                        ? 'bg-emerald-50/50 text-foreground border-emerald-200 focus-visible:ring-emerald-500/30'
+                        : 'bg-background'
                     )}
                   />
                   {foundCustomer ? (
                     <Check className="absolute left-3 top-3 h-4 w-4 text-emerald-500" />
                   ) : (
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
+                    <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
                   )}
                 </div>
               </div>
             </div>
 
             {!foundCustomer && searchDoc.length > 2 && (
-              <p className="text-[11px] text-destructive/80 -mt-2">
-                * Cliente no encontrado. Por favor verifique el documento.
+              <p className="text-[11px] text-muted-foreground -mt-2">
+                * Cliente no registrado. Se guardará solo con el nombre.
               </p>
             )}
           </div>
@@ -310,9 +317,15 @@ export function ShiftForm({ currentDate, onSave, formatDateHeader }: ShiftFormPr
             <Button
               type="submit"
               className="w-full sm:w-auto h-10 px-6"
-              disabled={!formData.cliente || !formData.servicio}
+              disabled={!formData.cliente || !formData.servicio || isSubmitting}
             >
-              <Save className="mr-2 h-4 w-4" /> Confirmar Turno
+              {isSubmitting ? (
+                'Guardando...'
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" /> Confirmar Turno
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>

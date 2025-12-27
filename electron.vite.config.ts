@@ -20,6 +20,7 @@ export default defineConfig({
         '@core': resolve('src/renderer/src/modules/core'),
         '@auth': resolve('src/renderer/src/modules/auth'),
         '@shift': resolve('src/renderer/src/modules/shift'),
+        '@customers': resolve('src/renderer/src/modules/customers'),
 
         // Alias de Utilidades Comunes
         '@ui': resolve('src/renderer/src/components/ui'),
