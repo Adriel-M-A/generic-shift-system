@@ -1,15 +1,9 @@
 import { useShifts } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
 
-interface YearViewProps {
-  year: number
-  currentDate: Date | undefined
-  onSelectDate: (date: Date) => void
-  onMonthDoubleClick: (monthIndex: number) => void
-}
-
-export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }: YearViewProps) {
-  const { getDailyLoad, config } = useShifts()
+export function YearView() {
+  const { currentDate, changeDate, changeView, getDailyLoad, config } = useShifts()
+  const year = currentDate.getFullYear()
 
   const months = Array.from({ length: 12 }, (_, i) => i)
   const weekDays =
@@ -23,6 +17,13 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
     if (load > low) return 'bg-load-medium'
     if (load > 0) return 'bg-load-low'
     return 'bg-transparent'
+  }
+
+  const handleMonthDoubleClick = (monthIndex: number) => {
+    const newDate = new Date(currentDate)
+    newDate.setMonth(monthIndex)
+    changeDate(newDate)
+    changeView('month')
   }
 
   return (
@@ -42,7 +43,7 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
           return (
             <div
               key={monthIndex}
-              onDoubleClick={() => onMonthDoubleClick(monthIndex)}
+              onDoubleClick={() => handleMonthDoubleClick(monthIndex)}
               className="border border-border/40 rounded-lg p-3 bg-card shadow-sm hover:bg-muted/10 transition-all cursor-pointer"
             >
               <h4 className="text-xs font-bold capitalize mb-2 text-primary/80 text-center">
@@ -61,7 +62,7 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
                   const day = i + 1
                   const thisDate = new Date(year, monthIndex, day)
                   const load = getDailyLoad(thisDate)
-                  const isSelected = currentDate?.toDateString() === thisDate.toDateString()
+                  const isSelected = currentDate.toDateString() === thisDate.toDateString()
                   const isToday = new Date().toDateString() === thisDate.toDateString()
 
                   return (
@@ -69,7 +70,7 @@ export function YearView({ year, currentDate, onSelectDate, onMonthDoubleClick }
                       key={day}
                       onClick={(e) => {
                         e.stopPropagation()
-                        onSelectDate(thisDate)
+                        changeDate(thisDate)
                       }}
                       className={cn(
                         'relative aspect-square flex items-center justify-center rounded-sm text-[10px] transition-all',

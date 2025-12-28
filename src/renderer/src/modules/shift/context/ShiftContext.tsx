@@ -1,5 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react'
-import { toast } from 'sonner'
+import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { Shift, NewShiftData, ShiftConfig, EstadoTurno } from '../types'
 import { parseError } from '@lib/error-utils'
 
@@ -7,6 +6,7 @@ interface ShiftContextType {
   currentDate: Date
   view: 'month' | 'year'
   shifts: Shift[]
+  filteredShifts: Shift[]
   loading: boolean
   config: ShiftConfig
   getDailyLoad: (date: Date) => number
@@ -15,7 +15,7 @@ interface ShiftContextType {
   addShift: (data: NewShiftData) => Promise<void>
   changeShiftStatus: (id: number, estado: EstadoTurno) => Promise<void>
   updateConfig: (newConfig: ShiftConfig) => Promise<void>
-  refreshShifts: () => void
+  fetchShiftsAndLoads: () => Promise<void>
 }
 
 const ShiftContext = createContext<ShiftContextType | undefined>(undefined)
@@ -39,7 +39,6 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(false)
   const [config, setConfig] = useState<ShiftConfig>(DEFAULT_CONFIG)
 
-  // Función auxiliar para consistencia de fechas
   const toLocalISODate = (d: Date): string => {
     const year = d.getFullYear()
     const month = String(d.getMonth() + 1).padStart(2, '0')
@@ -66,9 +65,48 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
         })
       }
     } catch (e) {
-      console.error('Error al cargar config:', e)
+      console.error(e)
     }
   }
+
+  const fetchShiftsAndLoads = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = {
+        date: toLocalISODate(currentDate),
+        year: currentDate.getFullYear(),
+        month: currentDate.getMonth() + 1
+      }
+
+      const { shifts: dayShifts, monthlyLoad: loadsArray } =
+        await window.api.shift.getInitialData(params)
+      setShifts(dayShifts)
+
+      const loadsMap: Record<string, number> = {}
+      if (Array.isArray(loadsArray)) {
+        loadsArray.forEach((item: any) => {
+          loadsMap[item.fecha] = item.count
+        })
+      }
+      setDailyLoads(loadsMap)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }, [currentDate])
+
+  const filteredShifts = useMemo(() => {
+    return shifts
+      .filter((s) => {
+        if (s.estado === 'pendiente') return true
+        if (s.estado === 'completado' && config.showCompleted) return true
+        if (s.estado === 'cancelado' && config.showCancelled) return true
+        if (s.estado === 'ausente' && config.showAbsent) return true
+        return false
+      })
+      .sort((a, b) => a.hora.localeCompare(b.hora))
+  }, [shifts, config])
 
   const getDailyLoad = useCallback(
     (date: Date) => {
@@ -78,43 +116,10 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
     [dailyLoads]
   )
 
-  const fetchShiftsAndLoads = useCallback(async () => {
-    setLoading(true)
-    try {
-      const dateStr = toLocalISODate(currentDate)
-
-      // 1. Cargar turnos del día
-      const dayShifts = await window.api.shift.getByDate(dateStr)
-      setShifts(dayShifts)
-
-      // 2. Cargar carga mensual
-      const month = currentDate.getMonth() + 1
-      const year = currentDate.getFullYear()
-
-      // CORRECCIÓN 1: Enviamos como un solo objeto { year, month }
-      const loadsArray = await window.api.shift.getMonthlyLoad({ year, month })
-
-      // CORRECCIÓN 2: Convertimos el Array [{fecha, count}] en un Objeto {fecha: count}
-      // Esto soluciona el error de "Falta la signatura de índice"
-      const loadsMap: Record<string, number> = {}
-      if (Array.isArray(loadsArray)) {
-        loadsArray.forEach((item: any) => {
-          // Ajusta 'item.fecha' y 'item.count' según los nombres de columna de tu SQL
-          loadsMap[item.fecha] = item.count
-        })
-      }
-
-      setDailyLoads(loadsMap)
-    } catch (error) {
-      console.error('Error en fetchShiftsAndLoads:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [currentDate])
-
   useEffect(() => {
     loadConfig()
   }, [])
+
   useEffect(() => {
     fetchShiftsAndLoads()
   }, [fetchShiftsAndLoads])
@@ -123,7 +128,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const fecha = data.fecha || toLocalISODate(currentDate)
       await window.api.shift.create({ ...data, fecha })
-      fetchShiftsAndLoads()
+      await fetchShiftsAndLoads()
     } catch (error) {
       throw new Error(parseError(error))
     }
@@ -132,7 +137,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
   const changeShiftStatus = async (id: number, estado: EstadoTurno) => {
     try {
       await window.api.shift.updateStatus({ id, estado })
-      fetchShiftsAndLoads()
+      await fetchShiftsAndLoads()
     } catch (error) {
       throw new Error(parseError(error))
     }
@@ -153,7 +158,6 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
       }
       await window.api.settings.setMany(s)
       setConfig(newConfig)
-      toast.success('Configuración guardada')
     } catch (error) {
       throw new Error(parseError(error))
     }
@@ -165,6 +169,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
         currentDate,
         view,
         shifts,
+        filteredShifts,
         loading,
         config,
         getDailyLoad,
@@ -173,7 +178,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
         addShift,
         changeShiftStatus,
         updateConfig,
-        refreshShifts: fetchShiftsAndLoads
+        fetchShiftsAndLoads
       }}
     >
       {children}

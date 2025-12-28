@@ -4,34 +4,7 @@ import { Button } from '@ui/button'
 import { Separator } from '@ui/separator'
 import { Shift, EstadoTurno } from '../types'
 import { cn } from '@lib/utils'
-
-const getStatusStyles = (status: EstadoTurno) => {
-  switch (status) {
-    case 'completado':
-      return {
-        badge: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:text-emerald-400',
-        accent: 'bg-emerald-500'
-      }
-    case 'cancelado':
-      return {
-        badge: 'bg-destructive/15 text-destructive border-destructive/20',
-        accent: 'bg-destructive'
-      }
-    case 'ausente':
-      return {
-        badge: 'bg-amber-500/15 text-amber-700 border-amber-500/20 dark:text-amber-400',
-        accent: 'bg-amber-500'
-      }
-    default: // pendiente
-      return {
-        badge:
-          'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700',
-        accent: 'bg-zinc-300 dark:bg-zinc-600'
-      }
-  }
-}
-
-const getStatusLabel = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+import { getStatusStyles, getStatusLabel } from '../utils'
 
 interface ShiftCardProps {
   turno: Shift
@@ -52,7 +25,6 @@ export function ShiftCard({ turno, onChangeStatus, onRequestCancel }: ShiftCardP
         (turno.estado === 'cancelado' || turno.estado === 'ausente') && 'opacity-70'
       )}
     >
-      {/* Acento lateral de estado */}
       <div
         className={cn(
           'absolute left-0 top-2 bottom-2 w-1 rounded-r-full transition-colors',
@@ -102,7 +74,6 @@ export function ShiftCard({ turno, onChangeStatus, onRequestCancel }: ShiftCardP
           </div>
         </div>
 
-        {/* Acciones */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
           {!isPending ? (
             <Button

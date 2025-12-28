@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 import { Button } from '@ui/button'
 import {
@@ -13,32 +12,19 @@ import { YearView } from '../YearView'
 import { cn } from '@lib/utils'
 import { useShifts } from '../../hooks/useShifts'
 
-interface CalendarSectionProps {
-  date: Date | undefined
-  setDate: (date: Date) => void
-}
-
-export function CalendarSection({ date, setDate }: CalendarSectionProps) {
-  const { view, changeView } = useShifts()
-  const safeDate = useMemo(() => date || new Date(), [date])
+export function CalendarSection() {
+  const { currentDate, changeDate, view, changeView } = useShifts()
 
   const handlePrevYear = () => {
-    const newDate = new Date(safeDate)
-    newDate.setFullYear(safeDate.getFullYear() - 1)
-    setDate(newDate)
+    const newDate = new Date(currentDate)
+    newDate.setFullYear(currentDate.getFullYear() - 1)
+    changeDate(newDate)
   }
 
   const handleNextYear = () => {
-    const newDate = new Date(safeDate)
-    newDate.setFullYear(safeDate.getFullYear() + 1)
-    setDate(newDate)
-  }
-
-  const handleMonthDoubleClick = (monthIndex: number) => {
-    const newDate = new Date(safeDate)
-    newDate.setMonth(monthIndex)
-    setDate(newDate)
-    changeView('month')
+    const newDate = new Date(currentDate)
+    newDate.setFullYear(currentDate.getFullYear() + 1)
+    changeDate(newDate)
   }
 
   return (
@@ -62,7 +48,7 @@ export function CalendarSection({ date, setDate }: CalendarSectionProps) {
                 <ChevronLeft className="h-4 w-4 opacity-70 group-hover:opacity-100" />
               </Button>
               <span className="text-sm font-bold px-3 min-w-16 text-center select-none text-foreground/90 group-hover:text-primary">
-                {safeDate.getFullYear()}
+                {currentDate.getFullYear()}
               </span>
               <Button
                 variant="ghost"
@@ -105,16 +91,7 @@ export function CalendarSection({ date, setDate }: CalendarSectionProps) {
       </CardHeader>
 
       <CardContent className="flex-1 p-0 min-h-0 relative bg-background overflow-hidden">
-        {view === 'month' ? (
-          <MonthView currentDate={safeDate} onDateChange={setDate} />
-        ) : (
-          <YearView
-            year={safeDate.getFullYear()}
-            currentDate={date}
-            onSelectDate={setDate}
-            onMonthDoubleClick={handleMonthDoubleClick}
-          />
-        )}
+        {view === 'month' ? <MonthView /> : <YearView />}
       </CardContent>
     </Card>
   )

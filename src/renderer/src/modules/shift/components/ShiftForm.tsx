@@ -8,7 +8,8 @@ import {
   ChevronUp,
   Check,
   Search,
-  User as UserIcon
+  User as UserIcon,
+  Loader2
 } from 'lucide-react'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
@@ -26,23 +27,20 @@ import { TimePicker } from '@ui/time-picker'
 import { useShifts } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
 import { Customer } from '@customers/types'
+import { formatDateHeader } from '../utils'
 
-interface ShiftFormProps {
-  currentDate: Date | undefined
-  formatDateHeader: (d: Date) => string
-}
-
-export function ShiftForm({ currentDate, formatDateHeader }: ShiftFormProps) {
-  const { config, createShift } = useShifts()
+export function ShiftForm() {
+  const { currentDate, config, createShift } = useShifts()
 
   const [open, setOpen] = useState(false)
   const [isServiceOpen, setIsServiceOpen] = useState(false)
   const serviceWrapperRef = useRef<HTMLDivElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
 
   const [time, setTime] = useState(config.openingTime || '09:00')
   const [availableServices, setAvailableServices] = useState<string[]>([])
-  const [customers, setCustomers] = useState<Customer[]>([])
+  const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null)
 
   const [searchDoc, setSearchDoc] = useState('')
   const [formData, setFormData] = useState<{ cliente: string; servicio: string }>({
@@ -55,41 +53,51 @@ export function ShiftForm({ currentDate, formatDateHeader }: ShiftFormProps) {
   }, [config.openingTime])
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchServices() {
       try {
-        const [servicesData, customersData] = await Promise.all([
-          window.api.services.getAll(),
-          window.api.customers.getAll()
-        ])
-
+        const servicesData = await window.api.services.getAll()
         const activeServiceNames = servicesData
           .filter((s: any) => s.activo === 1)
           .map((s: any) => s.nombre)
         setAvailableServices(activeServiceNames)
-        setCustomers(customersData)
       } catch (error) {
-        console.error('Error cargando datos:', error)
+        console.error(error)
       }
     }
-
-    if (open) fetchData()
+    if (open) fetchServices()
   }, [open])
 
-  const foundCustomer = useMemo(() => {
-    if (!searchDoc) return null
-    return customers.find((c) => c.documento === searchDoc)
-  }, [searchDoc, customers])
-
   useEffect(() => {
-    if (foundCustomer) {
-      setFormData((prev) => ({
-        ...prev,
-        cliente: `${foundCustomer.apellido} ${foundCustomer.nombre}`
-      }))
-    } else if (searchDoc === '') {
+    if (!searchDoc) {
+      setFoundCustomer(null)
       setFormData((prev) => ({ ...prev, cliente: '' }))
+      return
     }
-  }, [foundCustomer, searchDoc])
+
+    const delayDebounce = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const results = await window.api.customers.search(searchDoc)
+        const exactMatch = results.find((c) => c.documento === searchDoc)
+
+        if (exactMatch) {
+          setFoundCustomer(exactMatch)
+          setFormData((prev) => ({
+            ...prev,
+            cliente: `${exactMatch.apellido} ${exactMatch.nombre}`
+          }))
+        } else {
+          setFoundCustomer(null)
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(delayDebounce)
+  }, [searchDoc])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -130,8 +138,6 @@ export function ShiftForm({ currentDate, formatDateHeader }: ShiftFormProps) {
     }
   }
 
-  const dateStr = currentDate ? formatDateHeader(currentDate) : 'la fecha seleccionada'
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -149,7 +155,9 @@ export function ShiftForm({ currentDate, formatDateHeader }: ShiftFormProps) {
               Crear Nuevo Turno
             </DialogTitle>
             <DialogDescription className="mt-1">
-              Agendando para el <span className="font-semibold text-foreground">{dateStr}</span>.
+              Agendando para el{' '}
+              <span className="font-semibold text-foreground">{formatDateHeader(currentDate)}</span>
+              .
             </DialogDescription>
           </DialogHeader>
 
@@ -256,7 +264,11 @@ export function ShiftForm({ currentDate, formatDateHeader }: ShiftFormProps) {
                     autoComplete="off"
                     maxLength={15}
                   />
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
+                  {isSearching ? (
+                    <Loader2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground animate-spin" />
+                  ) : (
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
+                  )}
                 </div>
               </div>
 
@@ -270,7 +282,11 @@ export function ShiftForm({ currentDate, formatDateHeader }: ShiftFormProps) {
                 <div className="relative">
                   <Input
                     id="cliente"
-                    placeholder={searchDoc ? 'No encontrado' : 'Buscar documento...'}
+                    placeholder={
+                      searchDoc && !isSearching && !foundCustomer
+                        ? 'No encontrado'
+                        : 'Ingrese nombre...'
+                    }
                     value={formData.cliente}
                     onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
                     readOnly={!!foundCustomer}
@@ -290,7 +306,7 @@ export function ShiftForm({ currentDate, formatDateHeader }: ShiftFormProps) {
               </div>
             </div>
 
-            {!foundCustomer && searchDoc.length > 2 && (
+            {!foundCustomer && !isSearching && searchDoc.length > 2 && (
               <p className="text-[11px] text-muted-foreground -mt-2">
                 * Cliente no registrado. Se guardará solo con el nombre.
               </p>
