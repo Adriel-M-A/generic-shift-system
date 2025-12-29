@@ -83,7 +83,7 @@ export function MonthView() {
 
   return (
     <div className="flex flex-col h-full bg-card shadow-sm min-h-0">
-      <div className="flex items-center justify-between p-3 border-b bg-card shrink-0">
+      <div className="flex items-center justify-between p-1 border-b bg-card shrink-0">
         <h2 className="text-lg font-semibold capitalize pl-1">{monthName}</h2>
         <div className="flex items-center gap-1">
           <button
@@ -101,7 +101,7 @@ export function MonthView() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin overflow-x-hidden p-2">
+      <div className="flex-1 overflow-y-auto scrollbar-thin overflow-x-hidden">
         <div className="max-w-4xl mx-auto flex flex-col">
           <div className="grid grid-cols-7 gap-1 border-b bg-muted/40 mb-1">
             {weekDays.map((day) => (
@@ -157,7 +157,7 @@ export function MonthView() {
                             : 'text-muted-foreground/40'
                         )}
                       >
-                        {load} {load === 1 ? 't' : 't'}
+                        {load} {load === 1 ? 'turno' : 'turnos'}
                       </span>
                     </div>
                   )}
