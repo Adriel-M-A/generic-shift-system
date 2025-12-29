@@ -4,8 +4,10 @@ import { CustomerService } from './service'
 import { CustomerSchema, UpdateCustomerSchema } from './validations'
 
 export function registerCustomerHandlers(service: CustomerService) {
-  ipcMain.handle('customers:getAll', () => service.getAll())
-  ipcMain.handle('customers:search', (_, query: string) => service.search(query))
+  ipcMain.handle('customers:getPaginated', (_, { page, limit, search }) =>
+    service.getPaginated(page, limit, search)
+  )
+
   ipcMain.handle('customers:getById', (_, id: number) => service.getById(id))
 
   ipcMain.handle('customers:create', async (_, data) => {
