@@ -26,10 +26,20 @@ import {
   Download,
   Upload,
   FolderOpen,
-  Clock
+  Clock,
+  MoreHorizontal,
+  Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUI } from '@core/context/UIContext'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@ui/dropdown-menu'
 
 export default function Backups() {
   const [backups, setBackups] = useState<any[]>([])
@@ -39,7 +49,6 @@ export default function Backups() {
 
   const { setBlocking } = useUI()
 
-  // --- LÓGICA (Igual que antes) ---
   const fetchBackups = async () => {
     const res = await window.electron.ipcRenderer.invoke('backup:list')
     if (res.success) {
@@ -126,214 +135,241 @@ export default function Backups() {
     }
   }
 
-  // Cálculos de estado
   const lastBackup = backups.length > 0 ? new Date(backups[0].createdAt) : null
   const isHealthy = lastBackup
     ? new Date().getTime() - lastBackup.getTime() < 7 * 24 * 60 * 60 * 1000
     : false
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-10">
-      {/* 1. HEADER SECCIÓN: Título a la izq, Acciones principales a la derecha */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
+    <div className="space-y-4 animate-in fade-in duration-500">
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Copias de Seguridad</h2>
-          <p className="text-muted-foreground">
-            Gestiona la integridad de tus datos y puntos de restauración.
-          </p>
+          <h2 className="text-2xl font-bold">Copias de Seguridad</h2>
+          <p className="text-xs text-muted-foreground">Gestiona tus respaldos</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleImport} disabled={loading}>
-            <Upload className="mr-2 h-4 w-4" />
-            Importar Externo
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleImport} disabled={loading}>
+            <Upload className="h-4 w-4 mr-1" />
+            Importar
           </Button>
-          <Button onClick={handleCreate} disabled={loading}>
-            <Save className="mr-2 h-4 w-4" />
-            Crear Nuevo Respaldo
+          <Button size="sm" onClick={handleCreate} disabled={loading}>
+            <Save className="h-4 w-4 mr-1" />
+            Crear respaldo
           </Button>
         </div>
       </div>
 
-      {/* 2. GRID DE INFORMACIÓN: Separamos Salud vs Configuración */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* CARD A: Estado de Salud (Ocupa 2 espacios) */}
-        <Card
-          className={`md:col-span-2 border-l-4 ${isHealthy ? 'border-l-green-500' : 'border-l-orange-500'}`}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
+      {/* INFO CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Estado */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2 pt-3">
+            <div className="flex items-center gap-2">
               {isHealthy ? (
-                <ShieldCheck className="text-green-600 h-5 w-5" />
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
               ) : (
-                <AlertTriangle className="text-orange-600 h-5 w-5" />
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
               )}
-              Estado del Sistema: {isHealthy ? 'Saludable' : 'Atención Requerida'}
-            </CardTitle>
-            <CardDescription>
-              {backups.length === 0
-                ? 'No se han encontrado copias de seguridad recientes.'
-                : `Tu última copia de seguridad fue realizada el ${lastBackup?.toLocaleDateString()} a las ${lastBackup?.toLocaleTimeString()}.`}
-            </CardDescription>
+              <CardTitle className="text-sm">{isHealthy ? 'Protegido' : 'Revisar'}</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
-            {isHealthy ? (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Protegido
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                Riesgo de pérdida de datos
-              </Badge>
-            )}
+          <CardContent className="pb-3">
+            <p className="text-xs text-muted-foreground">
+              {backups.length === 0
+                ? 'Sin respaldos'
+                : `${backups.length} copia${backups.length !== 1 ? 's' : ''}`}
+            </p>
           </CardContent>
         </Card>
 
-        {/* CARD B: Ajustes Rápidos */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Configuración</CardTitle>
+        {/* Último respaldo */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2 pt-3">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm">Última copia</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Toggle Auto Backup */}
-            <div className="flex items-start space-x-3 p-3 rounded-md border bg-muted/30">
+          <CardContent className="pb-3">
+            <p className="text-xs text-muted-foreground">
+              {lastBackup ? lastBackup.toLocaleDateString() : 'Nunca'}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Configuración */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2 pt-3">
+            <CardTitle className="text-sm">Automático</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <div className="flex items-center gap-2">
               <Checkbox
                 id="auto-backup"
                 checked={autoBackup}
                 onCheckedChange={(c) => handleToggleAuto(c as boolean)}
               />
-              <div className="grid gap-1.5 leading-none">
-                <Label
-                  htmlFor="auto-backup"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  Backup Automático
-                </Label>
-                <p className="text-xs text-muted-foreground">Al cerrar la aplicación</p>
-              </div>
-            </div>
-
-            {/* Ruta (Info visual) */}
-            <div className="text-xs text-muted-foreground break-all flex gap-2 items-start">
-              <FolderOpen className="h-3 w-3 mt-0.5 shrink-0" />
-              <span>{backupPath || 'Cargando ruta...'}</span>
+              <Label htmlFor="auto-backup" className="text-xs cursor-pointer text-muted-foreground">
+                Activado
+              </Label>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* 3. TABLA DE HISTORIAL */}
-      <Card>
-        <CardHeader>
+      {/* TABLA */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-2 pt-3">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <HardDrive className="h-5 w-5 text-gray-500" /> Historial Local
-              </CardTitle>
-              <CardDescription>Se mantienen las últimas 10 copias automáticamente.</CardDescription>
-            </div>
-            <Badge variant="secondary" className="hidden sm:flex">
-              {backups.length} Archivos
-            </Badge>
+            <CardTitle className="text-sm">Historial</CardTitle>
+            {backups.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {backups.length}
+              </Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="pl-6">Nombre de Archivo</TableHead>
-                <TableHead>Fecha de Creación</TableHead>
-                <TableHead>Tamaño</TableHead>
-                <TableHead className="text-right pr-6">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {backups.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
-                    <div className="flex flex-col items-center gap-2">
-                      <Clock className="h-8 w-8 opacity-20" />
-                      <p>No hay copias de seguridad disponibles</p>
-                    </div>
-                  </TableCell>
+          <div className="border rounded-b-md overflow-auto">
+            <table className="w-full text-xs">
+              <TableHeader className="bg-muted/30">
+                <TableRow className="hover:bg-transparent border-none">
+                  <TableHead className="h-9 pl-4 font-medium">Archivo</TableHead>
+                  <TableHead className="h-9 font-medium">Fecha</TableHead>
+                  <TableHead className="h-9 font-medium">Tamaño</TableHead>
+                  <TableHead className="text-right pr-4 h-9 font-medium w-20">Acciones</TableHead>
                 </TableRow>
-              )}
-              {backups.map((backup) => (
-                <TableRow key={backup.name}>
-                  <TableCell className="pl-6 font-medium font-mono text-xs text-muted-foreground">
-                    {backup.name}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {new Date(backup.createdAt).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {(backup.size / 1024 / 1024).toFixed(2)} MB
-                  </TableCell>
-                  <TableCell className="text-right pr-6">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => handleExport(backup.name)}
-                        title="Exportar a USB"
-                        disabled={loading}
-                      >
-                        <Download className="h-4 w-4 text-blue-500" />
-                      </Button>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
+              </TableHeader>
+              <TableBody>
+                {loading && backups.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-20 text-center">
+                      <Loader2 className="h-3 w-3 animate-spin mx-auto" />
+                    </TableCell>
+                  </TableRow>
+                ) : backups.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
+                      Sin respaldos
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  backups.map((backup) => (
+                    <TableRow
+                      key={backup.name}
+                      className="border-b hover:bg-muted/30 transition-colors"
+                    >
+                      <TableCell className="pl-4 py-2 font-mono">
+                        {backup.name.substring(0, 30)}...
+                      </TableCell>
+                      <TableCell className="py-2 text-muted-foreground">
+                        {new Date(backup.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="py-2 text-muted-foreground">
+                        {(backup.size / 1024 / 1024).toFixed(2)} MB
+                      </TableCell>
+                      <TableCell className="text-right pr-4 py-2">
+                        {/* Desktop */}
+                        <div className="hidden sm:flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 hover:bg-orange-100 dark:hover:bg-orange-900/20"
+                            className="h-7 w-7 p-0"
+                            onClick={() => handleExport(backup.name)}
                             disabled={loading}
-                            title="Restaurar este punto"
+                            title="Exportar"
                           >
-                            <RotateCcw className="h-4 w-4 text-orange-600" />
+                            <Download className="h-3 w-3" />
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Restauración del Sistema</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Vas a volver al estado del:{' '}
-                              <b>{new Date(backup.createdAt).toLocaleString()}</b>
-                              <br />
-                              <br />
-                              ⚠️ <b>Advertencia:</b> Todos los datos creados después de esta fecha
-                              se eliminarán permanentemente. La aplicación se reiniciará
-                              automáticamente.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-orange-600 hover:bg-orange-700 text-white"
-                              onClick={() => handleRestore(backup.name)}
-                            >
-                              Confirmar Restauración
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/20"
-                        onClick={() => handleDelete(backup.name)}
-                        disabled={loading}
-                        title="Eliminar archivo"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                disabled={loading}
+                                title="Restaurar"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="sm:max-w-sm">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-sm">Restaurar</AlertDialogTitle>
+                                <AlertDialogDescription className="text-xs">
+                                  Volver al {new Date(backup.createdAt).toLocaleString()}
+                                  <br />
+                                  ⚠️ Los datos posteriores se eliminarán.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="gap-2 sm:gap-0">
+                                <AlertDialogCancel className="text-xs h-8">
+                                  Cancelar
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8"
+                                  onClick={() => handleRestore(backup.name)}
+                                >
+                                  Restaurar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => handleDelete(backup.name)}
+                            disabled={loading}
+                            title="Eliminar"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+
+                        {/* Mobile */}
+                        <div className="sm:hidden">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                <MoreHorizontal className="h-3 w-3" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-32">
+                              <DropdownMenuLabel className="text-xs">Acciones</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => handleExport(backup.name)}
+                                className="text-xs"
+                              >
+                                <Download className="h-3 w-3 mr-2" /> Exportar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleRestore(backup.name)}
+                                className="text-xs"
+                              >
+                                <RotateCcw className="h-3 w-3 mr-2" /> Restaurar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(backup.name)}
+                                className="text-destructive text-xs focus:text-destructive"
+                              >
+                                <Trash2 className="h-3 w-3 mr-2" /> Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </table>
+          </div>
         </CardContent>
       </Card>
     </div>
