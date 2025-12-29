@@ -1,9 +1,10 @@
-import { db } from '../../../core/database'
+import { Database } from 'better-sqlite3'
 import bcrypt from 'bcryptjs'
 
 export class AuthService {
-  // Estado de sesión
   private currentSession: { id: number; level: number } | null = null
+
+  constructor(private db: Database) {}
 
   getCurrentUser() {
     return this.currentSession
@@ -15,19 +16,17 @@ export class AuthService {
   }
 
   login(usuario: string, password: string) {
-    const user = db.prepare('SELECT * FROM usuarios WHERE usuario = ?').get(usuario) as any
+    const user = this.db.prepare('SELECT * FROM usuarios WHERE usuario = ?').get(usuario) as any
     if (!user) throw new Error('Usuario no encontrado')
 
     const match = bcrypt.compareSync(password, user.password)
     if (!match) throw new Error('Contraseña incorrecta')
 
-    // Iniciar sesión
     this.currentSession = { id: user.id, level: user.level }
 
-    // CORREGIDO: Usar hora local (Argentina) en lugar de UTC
-    db.prepare("UPDATE usuarios SET last_login = datetime('now', 'localtime') WHERE id = ?").run(
-      user.id
-    )
+    this.db
+      .prepare("UPDATE usuarios SET last_login = datetime('now', 'localtime') WHERE id = ?")
+      .run(user.id)
 
     const { password: _, ...userData } = user
     return { success: true, user: userData }
@@ -35,10 +34,10 @@ export class AuthService {
 
   checkPermission(requiredPerm: string): boolean {
     if (!this.currentSession) return false
-    if (this.currentSession.level === 1) return true // Admin total
+    if (this.currentSession.level === 1) return true
 
     try {
-      const role = db
+      const role = this.db
         .prepare('SELECT permissions FROM roles WHERE id = ?')
         .get(this.currentSession.level) as any
       if (!role) return false
@@ -49,5 +48,3 @@ export class AuthService {
     }
   }
 }
-
-export const authService = new AuthService()

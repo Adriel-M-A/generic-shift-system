@@ -4,7 +4,7 @@ import { Shift, NewShiftData } from './schema'
 export class ShiftService {
   constructor(private db: Database) {}
 
-  async create(data: NewShiftData): Promise<number> {
+  create(data: NewShiftData): number {
     const stmt = this.db.prepare(
       'INSERT INTO shifts (fecha, hora, cliente, servicio, estado, customer_id) VALUES (?, ?, ?, ?, ?, ?)'
     )
@@ -19,13 +19,13 @@ export class ShiftService {
     return result.lastInsertRowid as number
   }
 
-  async getByDate(date: string): Promise<Shift[]> {
+  getByDate(date: string): Shift[] {
     return this.db
       .prepare('SELECT * FROM shifts WHERE fecha = ? ORDER BY hora ASC')
       .all(date) as Shift[]
   }
 
-  async getMonthlyLoad(params: { year: number; month: number }): Promise<any[]> {
+  getMonthlyLoad(params: { year: number; month: number }): any[] {
     const monthStr = String(params.month).padStart(2, '0')
     const pattern = `${params.year}-${monthStr}-%`
     return this.db
@@ -35,17 +35,13 @@ export class ShiftService {
       .all(pattern)
   }
 
-  async getInitialData(params: {
-    date: string
-    year: number
-    month: number
-  }): Promise<{ shifts: Shift[]; monthlyLoad: any[] }> {
-    const shifts = await this.getByDate(params.date)
-    const monthlyLoad = await this.getMonthlyLoad({ year: params.year, month: params.month })
+  getInitialData(params: { date: string; year: number; month: number }) {
+    const shifts = this.getByDate(params.date)
+    const monthlyLoad = this.getMonthlyLoad({ year: params.year, month: params.month })
     return { shifts, monthlyLoad }
   }
 
-  async getYearlyLoad(year: number): Promise<any[]> {
+  getYearlyLoad(year: number): any[] {
     const pattern = `${year}-%`
     return this.db
       .prepare(
@@ -54,7 +50,7 @@ export class ShiftService {
       .all(pattern)
   }
 
-  async updateStatus(id: number, estado: string): Promise<void> {
+  updateStatus(id: number, estado: string): void {
     this.db.prepare('UPDATE shifts SET estado = ? WHERE id = ?').run(estado, id)
   }
 }
