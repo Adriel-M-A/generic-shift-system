@@ -1,49 +1,34 @@
 import { ipcMain } from 'electron'
-import { customerService } from './service'
-import { CustomerSchema } from './validations'
+import { z } from 'zod'
+import { CustomerService } from './service'
+import { CustomerSchema, UpdateCustomerSchema } from './validations'
 
-export function registerCustomerHandlers(): void {
-  ipcMain.handle('customers:getAll', () => {
-    return customerService.getAll()
-  })
+export function registerCustomerHandlers(service: CustomerService) {
+  ipcMain.handle('customers:getAll', () => service.getAll())
 
-  ipcMain.handle('customers:create', (_, rawData) => {
-    const validation = CustomerSchema.safeParse(rawData)
+  ipcMain.handle('customers:search', (_, query: string) => service.search(query))
 
-    if (!validation.success) {
-      throw new Error(validation.error.issues[0].message)
-    }
+  ipcMain.handle('customers:getById', (_, id: number) => service.getById(id))
 
+  ipcMain.handle('customers:create', async (_, data) => {
     try {
-      // @ts-ignore
-      return customerService.create(validation.data)
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        throw new Error('El documento ya existe en la base de datos')
-      }
+      const validated = CustomerSchema.parse(data)
+      return await service.create(validated)
+    } catch (error) {
+      if (error instanceof z.ZodError) throw new Error(error.issues[0].message)
       throw error
     }
   })
 
-  ipcMain.handle('customers:update', (_, id, rawData) => {
-    const validation = CustomerSchema.safeParse(rawData)
-
-    if (!validation.success) {
-      throw new Error(validation.error.issues[0].message)
-    }
-
+  ipcMain.handle('customers:update', async (_, id: number, data: any) => {
     try {
-      // @ts-ignore
-      return customerService.update(id, validation.data)
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        throw new Error('El documento ya pertenece a otro cliente')
-      }
+      const validated = UpdateCustomerSchema.parse(data)
+      return await service.update(id, validated)
+    } catch (error) {
+      if (error instanceof z.ZodError) throw new Error(error.issues[0].message)
       throw error
     }
   })
 
-  ipcMain.handle('customers:delete', (_, id) => {
-    return customerService.delete(id)
-  })
+  ipcMain.handle('customers:delete', (_, id: number) => service.delete(id))
 }

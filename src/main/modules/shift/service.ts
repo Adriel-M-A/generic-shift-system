@@ -1,102 +1,60 @@
-import { db } from '../../core/database'
-
-export interface ShiftDB {
-  id: number
-  fecha: string
-  hora: string
-  cliente: string
-  servicio: string
-  profesional: string
-  estado: string
-  customer_id?: number
-}
+import { Database } from 'better-sqlite3'
+import { Shift, NewShiftData } from './schema'
 
 export class ShiftService {
-  create(data: {
-    fecha: string
-    hora: string
-    cliente: string
-    servicio: string
-    customerId?: number
-  }) {
-    const stmt = db.prepare(`
-      INSERT INTO turnos (fecha, hora, cliente, servicio, customer_id, profesional, estado)
-      VALUES (@fecha, @hora, @cliente, @servicio, @customerId, 'Staff', 'pendiente')
-    `)
+  constructor(private db: Database) {}
 
-    return stmt.run({
-      fecha: data.fecha,
-      hora: data.hora,
-      cliente: data.cliente,
-      servicio: data.servicio,
-      customerId: data.customerId || null
-    })
+  async create(data: NewShiftData): Promise<number> {
+    const stmt = this.db.prepare(
+      'INSERT INTO shifts (fecha, hora, cliente, servicio, estado, customer_id) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    const result = stmt.run(
+      data.fecha,
+      data.hora,
+      data.cliente,
+      data.servicio,
+      'pendiente',
+      data.customerId || null
+    )
+    return result.lastInsertRowid as number
   }
 
-  getByDate(fecha: string) {
-    const stmt = db.prepare(`
-      SELECT 
-        t.id, 
-        t.fecha, 
-        t.hora, 
-        t.servicio, 
-        t.estado,
-        t.customer_id,
-        COALESCE(c.nombre || ' ' || c.apellido, t.cliente) as cliente,
-        c.documento,
-        c.telefono, 
-        c.email
-      FROM turnos t
-      LEFT JOIN customers c ON t.customer_id = c.id
-      WHERE t.fecha = ? 
-      ORDER BY t.hora ASC
-    `)
-
-    const results = stmt.all(fecha)
-
-    return results.map((row: any) => ({
-      id: row.id,
-      fecha: row.fecha,
-      hora: row.hora,
-      cliente: row.cliente,
-      servicio: row.servicio,
-      estado: row.estado,
-      customerId: row.customer_id,
-      customerData: row.customer_id
-        ? {
-            documento: row.documento,
-            telefono: row.telefono,
-            email: row.email
-          }
-        : null
-    }))
+  async getByDate(date: string): Promise<Shift[]> {
+    return this.db
+      .prepare('SELECT * FROM shifts WHERE fecha = ? ORDER BY hora ASC')
+      .all(date) as Shift[]
   }
 
-  getByMonth(year: number, month: number) {
-    const monthStr = `${year}-${month.toString().padStart(2, '0')}`
-    const stmt = db.prepare(`
-      SELECT fecha, count(*) as count 
-      FROM turnos 
-      WHERE fecha LIKE ? AND estado != 'cancelado'
-      GROUP BY fecha
-    `)
-    return stmt.all(`${monthStr}-%`)
+  async getMonthlyLoad(params: { year: number; month: number }): Promise<any[]> {
+    const monthStr = String(params.month).padStart(2, '0')
+    const pattern = `${params.year}-${monthStr}-%`
+    return this.db
+      .prepare(
+        "SELECT fecha, COUNT(*) as count FROM shifts WHERE fecha LIKE ? AND estado != 'cancelado' GROUP BY fecha"
+      )
+      .all(pattern)
   }
 
-  getByYear(year: number) {
-    const stmt = db.prepare(`
-      SELECT fecha, count(*) as count 
-      FROM turnos 
-      WHERE fecha LIKE ? AND estado != 'cancelado'
-      GROUP BY fecha
-    `)
-    return stmt.all(`${year}-%`)
+  async getInitialData(params: {
+    date: string
+    year: number
+    month: number
+  }): Promise<{ shifts: Shift[]; monthlyLoad: any[] }> {
+    const shifts = await this.getByDate(params.date)
+    const monthlyLoad = await this.getMonthlyLoad({ year: params.year, month: params.month })
+    return { shifts, monthlyLoad }
   }
 
-  updateStatus(id: number, estado: string) {
-    const stmt = db.prepare(`UPDATE turnos SET estado = ? WHERE id = ?`)
-    return stmt.run(estado, id)
+  async getYearlyLoad(year: number): Promise<any[]> {
+    const pattern = `${year}-%`
+    return this.db
+      .prepare(
+        "SELECT fecha, COUNT(*) as count FROM shifts WHERE fecha LIKE ? AND estado != 'cancelado' GROUP BY fecha"
+      )
+      .all(pattern)
+  }
+
+  async updateStatus(id: number, estado: string): Promise<void> {
+    this.db.prepare('UPDATE shifts SET estado = ? WHERE id = ?').run(estado, id)
   }
 }
-
-export const shiftService = new ShiftService()

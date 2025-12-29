@@ -18,11 +18,16 @@ export const MonthlyLoadSchema = z.object({
   month: z.number().int().min(1).max(12)
 })
 
+export const InitialDataSchema = z.object({
+  date: z.string().regex(dateRegex, 'Fecha inválida'),
+  year: z.number().int().min(2000).max(2100),
+  month: z.number().int().min(1).max(12)
+})
+
 export const YearlyLoadSchema = z.number().int().min(2000).max(2100)
 
 export const UpdateStatusSchema = z.object({
   id: z.number().int().positive(),
-  // Validamos únicamente los 4 estados permitidos
   estado: z.enum(['pendiente', 'completado', 'cancelado', 'ausente'] as const, {
     message: 'Estado de turno inválido'
   })

@@ -9,13 +9,8 @@ interface CalendarSlot {
   isCurrentMonth: boolean
 }
 
-interface MonthViewProps {
-  currentDate: Date
-  onDateChange: (date: Date) => void
-}
-
-export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
-  const { config, getDailyLoad } = useShifts()
+export function MonthView() {
+  const { currentDate, changeDate, config, getDailyLoad } = useShifts()
 
   const weekDays = useMemo(() => {
     return config.startOfWeek === 'monday'
@@ -29,11 +24,11 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
   })
 
   const handlePrevMonth = () => {
-    onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
+    changeDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
   }
 
   const handleNextMonth = () => {
-    onDateChange(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
+    changeDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
   }
 
   const calendarData = useMemo(() => {
@@ -88,8 +83,7 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
 
   return (
     <div className="flex flex-col h-full bg-card shadow-sm min-h-0">
-      {/* Header - shrink-0 para que mantenga su tamaño */}
-      <div className="flex items-center justify-between p-3 border-b bg-card shrink-0">
+      <div className="flex items-center justify-between p-1 border-b bg-card shrink-0">
         <h2 className="text-lg font-semibold capitalize pl-1">{monthName}</h2>
         <div className="flex items-center gap-1">
           <button
@@ -107,11 +101,8 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
         </div>
       </div>
 
-      {/* Contenedor del Calendario */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin overflow-x-hidden p-2">
-        {/* Centramos la grilla horizontalmente y limitamos su ancho máximo para evitar estiramientos exagerados */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin overflow-x-hidden">
         <div className="max-w-4xl mx-auto flex flex-col">
-          {/* Días de la semana */}
           <div className="grid grid-cols-7 gap-1 border-b bg-muted/40 mb-1">
             {weekDays.map((day) => (
               <div
@@ -123,7 +114,6 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
             ))}
           </div>
 
-          {/* Grilla de días con aspect-square */}
           <div className="grid grid-cols-7 gap-1">
             {calendarData.map((slot, index) => {
               const load = getDailyLoad(slot.date)
@@ -133,7 +123,7 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
               return (
                 <button
                   key={`${slot.date.getTime()}-${index}`}
-                  onClick={() => onDateChange(slot.date)}
+                  onClick={() => changeDate(slot.date)}
                   className={cn(
                     'aspect-square rounded-md p-1 sm:p-2 relative flex flex-col items-start justify-between transition-all group outline-none',
                     'border border-border/40 w-full',
@@ -157,7 +147,6 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
                     </span>
                   </div>
 
-                  {/* Texto de turnos (solo si hay espacio suficiente) */}
                   {load > 0 && (
                     <div className="mt-auto w-full text-right hidden lg:block pb-1 overflow-hidden">
                       <span
@@ -168,12 +157,11 @@ export function MonthView({ currentDate, onDateChange }: MonthViewProps) {
                             : 'text-muted-foreground/40'
                         )}
                       >
-                        {load} {load === 1 ? 't' : 't'}
+                        {load} {load === 1 ? 'turno' : 'turnos'}
                       </span>
                     </div>
                   )}
 
-                  {/* Barra de carga */}
                   {load > 0 && (
                     <div
                       className={cn(

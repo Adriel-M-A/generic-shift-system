@@ -1,8 +1,6 @@
 /// <reference types="vite/client" />
 import { ElectronAPI } from '@electron-toolkit/preload'
 
-// --- Tipos Compartidos ---
-
 interface Customer {
   id: number
   documento: string
@@ -15,10 +13,8 @@ interface Customer {
 interface Service {
   id: number
   nombre: string
-  activo: number // 1 o 0
+  activo: number
 }
-
-// --- API Principal ---
 
 declare global {
   interface Window {
@@ -57,6 +53,11 @@ declare global {
         }) => Promise<any>
         getByDate: (date: string) => Promise<any[]>
         getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
+        getInitialData: (params: {
+          date: string
+          year: number
+          month: number
+        }) => Promise<{ shifts: any[]; monthlyLoad: any[] }>
         getYearlyLoad: (year: number) => Promise<any[]>
         updateStatus: (params: { id: number; estado: string }) => Promise<any>
       }
@@ -73,6 +74,7 @@ declare global {
       }
       customers: {
         getAll: () => Promise<Customer[]>
+        search: (query: string) => Promise<Customer[]>
         create: (data: any) => Promise<boolean>
         update: (id: number | string, data: any) => Promise<boolean>
         delete: (id: number | string) => Promise<void>

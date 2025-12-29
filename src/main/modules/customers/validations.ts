@@ -12,3 +12,5 @@ export const CustomerSchema = z.object({
     z.undefined()
   ])
 })
+
+export const UpdateCustomerSchema = CustomerSchema.partial()

@@ -26,6 +26,7 @@ const api = {
     create: (data) => ipcRenderer.invoke('shift:create', data),
     getByDate: (date) => ipcRenderer.invoke('shift:getByDate', date),
     getMonthlyLoad: (params) => ipcRenderer.invoke('shift:getMonthlyLoad', params),
+    getInitialData: (params) => ipcRenderer.invoke('shift:getInitialData', params),
     getYearlyLoad: (year) => ipcRenderer.invoke('shift:getYearlyLoad', year),
     updateStatus: (params) => ipcRenderer.invoke('shift:updateStatus', params)
   },
@@ -38,6 +39,7 @@ const api = {
   },
   customers: {
     getAll: (): Promise<any[]> => ipcRenderer.invoke('customers:getAll'),
+    search: (query: string): Promise<any[]> => ipcRenderer.invoke('customers:search', query),
     create: (data: any): Promise<any> => ipcRenderer.invoke('customers:create', data),
     update: (id: string | number, data: any): Promise<any> =>
       ipcRenderer.invoke('customers:update', id, data),

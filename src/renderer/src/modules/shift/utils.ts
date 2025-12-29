@@ -2,35 +2,36 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { EstadoTurno } from './types'
 
-/**
- * Formatea una fecha para el encabezado (Ej: "lunes 24 de diciembre")
- */
 export function formatDateHeader(date: Date): string {
-  // 'EEEE' = día semana completo, 'd' = día mes, 'MMMM' = mes completo
   return format(date, "EEEE d 'de' MMMM", { locale: es })
 }
 
-/**
- * Retorna las clases de Tailwind según el estado del turno
- */
-export function getStatusColor(estado: EstadoTurno): string {
-  switch (estado) {
-    case 'pendiente':
-      return 'bg-yellow-500/10 text-yellow-600 border-yellow-200 hover:bg-yellow-500/20'
-    case 'en_curso':
-      return 'bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20'
+export function getStatusStyles(status: EstadoTurno) {
+  switch (status) {
     case 'completado':
-      return 'bg-green-500/10 text-green-600 border-green-200 hover:bg-green-500/20'
+      return {
+        badge: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:text-emerald-400',
+        accent: 'bg-emerald-500'
+      }
     case 'cancelado':
-      return 'bg-red-500/10 text-red-600 border-red-200 hover:bg-red-500/20'
+      return {
+        badge: 'bg-destructive/15 text-destructive border-destructive/20',
+        accent: 'bg-destructive'
+      }
+    case 'ausente':
+      return {
+        badge: 'bg-amber-500/15 text-amber-700 border-amber-500/20 dark:text-amber-400',
+        accent: 'bg-amber-500'
+      }
     default:
-      return 'bg-gray-100 text-gray-600'
+      return {
+        badge:
+          'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700',
+        accent: 'bg-zinc-300 dark:bg-zinc-600'
+      }
   }
 }
 
-/**
- * Retorna una etiqueta legible para el estado
- */
 export function getStatusLabel(estado: EstadoTurno): string {
-  return estado.replace('_', ' ').toUpperCase()
+  return estado.charAt(0).toUpperCase() + estado.slice(1)
 }

@@ -41,17 +41,12 @@ const ITEMS_PER_PAGE = 15
 
 export default function Customers() {
   const { customers, isLoading, createCustomer, updateCustomer, deleteCustomer } = useCustomers()
-
-  // Estados de UI y Filtros
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-
-  // Estados de Modales
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>(undefined)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  // --- LÓGICA DE FILTRADO Y PAGINACIÓN ---
   const filteredCustomers = customers
     .filter(
       (c) =>
@@ -69,7 +64,6 @@ export default function Customers() {
     setCurrentPage(1)
   }, [search])
 
-  // --- HANDLERS ---
   const handleEdit = (customer: Customer) => {
     setEditingCustomer(customer)
     setIsDialogOpen(true)
@@ -126,11 +120,11 @@ export default function Customers() {
       </div>
 
       {/* TABLA */}
-      <div className="flex-1 min-h-0 rounded-md border bg-card overflow-auto relative">
+      <div className="flex-1 min-h-0 rounded-md border bg-card overflow-auto">
         <table className="w-full caption-bottom text-sm text-left">
-          <TableHeader className="sticky top-0 z-20 bg-card shadow-sm after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-border">
+          <TableHeader className="sticky top-0 z-20 bg-card">
             <TableRow className="hover:bg-transparent border-none">
-              <TableHead className="pl-6 h-12 w-[150px]">Documento</TableHead>
+              <TableHead className="h-12 pl-6 w-[150px]">Documento</TableHead>
               <TableHead className="h-12 min-w-[200px]">Nombre Completo</TableHead>
               <TableHead className="h-12 min-w-[150px]">Teléfono</TableHead>
               <TableHead className="h-12 min-w-[200px]">Email</TableHead>
@@ -173,7 +167,7 @@ export default function Customers() {
                     {customer.email || '-'}
                   </TableCell>
                   <TableCell className="text-right pr-6 py-3">
-                    {/* Botones Desktop */}
+                    {/* Desktop */}
                     <div className="hidden sm:flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
@@ -195,7 +189,7 @@ export default function Customers() {
                       </Button>
                     </div>
 
-                    {/* Menú Móvil */}
+                    {/* Mobile */}
                     <div className="sm:hidden flex justify-end">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

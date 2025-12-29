@@ -1,4 +1,3 @@
-import React from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ui/tabs'
 
 export interface TabDef {
@@ -7,59 +6,51 @@ export interface TabDef {
   content: React.ReactNode
 }
 
-interface TabsSectionProps {
-  title: React.ReactNode
-  subtitle?: React.ReactNode
-  tabs: TabDef[]
-  defaultValue?: string
-  className?: string
-}
-
-export default function TabsSection({
-  title,
-  subtitle,
-  tabs,
-  defaultValue,
-  className = ''
-}: TabsSectionProps) {
-  const defaultTab = defaultValue || (tabs.length ? tabs[0].value : '')
+function TabsSection({ title, subtitle, tabs, defaultValue, className = '' }) {
+  const defaultTab = defaultValue || tabs[0]?.value
 
   if (!defaultTab) {
     return (
       <div
-        className={`h-full flex flex-col items-center justify-center text-muted-foreground text-center ${className}`}
+        className={`h-full flex flex-col items-center justify-center text-muted-foreground p-8 ${className}`}
       >
-        <div className="h-12 w-12 mb-4 opacity-20" />
-        <h2 className="text-xl font-bold">Acceso Restringido</h2>
+        <h2 className="text-xl font-bold">Acceso restringido</h2>
         <p>No tienes permisos para ver esta sección.</p>
       </div>
     )
   }
 
   return (
-    <div className={`h-full flex flex-col space-y-6 overflow-hidden bg-background ${className}`}>
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
-        {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}
-      </div>
+    <section className={`h-full flex flex-col bg-background ${className}`}>
+      <header className="px-8 pt-8 pb-4 space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+      </header>
 
-      <Tabs defaultValue={defaultTab} className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="justify-start bg-transparent border-b rounded-none h-auto p-0 space-x-4 w-full">
-          {tabs.map((t) => (
-            <TabsTrigger key={t.value} value={t.value} className="tabs-trigger-style">
-              {t.label}
+      <Tabs defaultValue={defaultTab} className="flex-1 flex flex-col">
+        <TabsList variant="underline" className="px-8">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              variant="underline"
+              className="after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:scale-x-0 after:bg-primary after:transition-transform data-[state=active]:after:scale-x-100"
+            >
+              <span className="flex items-center gap-2">{tab.label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <div className="flex-1 overflow-y-auto pt-6 custom-scrollbar">
-          {tabs.map((t) => (
-            <TabsContent key={t.value} value={t.value} className="m-0 outline-none">
-              {t.content}
+        <div className="flex-1 overflow-y-auto px-8 py-6">
+          {tabs.map((tab) => (
+            <TabsContent key={tab.value} value={tab.value} className="m-0">
+              {tab.content}
             </TabsContent>
           ))}
         </div>
       </Tabs>
-    </div>
+    </section>
   )
 }
+
+export default TabsSection
