@@ -48,7 +48,6 @@ export default function Customers() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
 
   useEffect(() => {
     setCurrentPage(1)
@@ -83,15 +82,10 @@ export default function Customers() {
           <h2 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h2>
           <p className="text-muted-foreground mt-1">Gestiona la base de datos de clientes.</p>
         </div>
-
-        <Button onClick={handleCreate} className="gap-2 shadow-sm w-full sm:w-auto">
-          <Plus className="h-4 w-4" />
-          Nuevo Cliente
-        </Button>
       </div>
 
-      <div className="flex-none">
-        <div className="relative w-full max-sm">
+      <div className="flex-none flex flex-row items-center justify-between gap-4">
+        <div className="relative w-full max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
@@ -101,25 +95,29 @@ export default function Customers() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <Button onClick={handleCreate} className="gap-2 shadow-sm">
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Nuevo Cliente</span>
+        </Button>
       </div>
 
       <div className="flex-1 min-h-0 rounded-md border bg-card overflow-auto">
-        <table className="w-full caption-bottom text-sm text-left">
+        <table className="w-full text-sm text-left">
           <TableHeader className="sticky top-0 z-20 bg-card">
             <TableRow className="hover:bg-transparent border-none">
               <TableHead className="h-12 pl-6 w-[150px]">Documento</TableHead>
               <TableHead className="h-12 min-w-[200px]">Nombre Completo</TableHead>
               <TableHead className="h-12 min-w-[150px]">Teléfono</TableHead>
               <TableHead className="h-12 min-w-[200px]">Email</TableHead>
-              <TableHead className="text-right pr-6 h-12 w-[120px]">Acciones</TableHead>
+              <TableHead className="text-right pr-6 h-12 w-[100px]">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                <TableCell colSpan={5} className="h-32 text-center">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin opacity-50" />
                     Cargando clientes...
                   </div>
                 </TableCell>
@@ -156,7 +154,6 @@ export default function Customers() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-primary"
                         onClick={() => handleEdit(customer)}
-                        title="Editar"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -165,7 +162,6 @@ export default function Customers() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => setDeleteId(customer.id.toString())}
-                        title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -201,35 +197,29 @@ export default function Customers() {
         </table>
       </div>
 
-      <div className="flex-none">
-        {total > 0 && (
-          <div className="flex items-center justify-between space-x-2 pt-2">
-            <div className="text-sm text-muted-foreground">
-              {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, total)} de {total}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="text-sm font-medium">
-                {currentPage} / {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+      <div className="flex-none flex items-center justify-between pt-2">
+        <p className="text-sm text-muted-foreground">Total: {total} clientes</p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium">
+            {currentPage} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <CustomerDialog
@@ -253,7 +243,7 @@ export default function Customers() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará al cliente y todos sus datos asociados permanentemente.
+              Esta acción eliminará al cliente permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
