@@ -1,5 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
+export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'ausente'
+
 interface Customer {
   id: number
   documento: string
@@ -15,6 +17,18 @@ interface Service {
   id: number
   nombre: string
   activo: number
+}
+
+interface Shift {
+  id: number
+  fecha: string
+  hora: string
+  cliente: string
+  servicio: string
+  estado: EstadoTurno
+  customer_id?: number
+  created_at?: string
+  updated_at?: string
 }
 
 declare global {
@@ -49,25 +63,24 @@ declare global {
           fecha: string
           hora: string
           cliente: string
-          servicio: string[] // Array de servicios
-          customerId?: number | undefined // Cambiado para evitar error de null
+          servicio: string[]
+          customerId?: number
           createCustomer?: {
-            // Definimos la propiedad para que TS la reconozca
             nombre: string
             apellido: string
             documento: string
             telefono?: string
           }
         }) => Promise<number>
-        getByDate: (date: string) => Promise<any[]>
+        getByDate: (date: string) => Promise<Shift[]>
         getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
         getInitialData: (params: {
           date: string
           year: number
           month: number
-        }) => Promise<{ shifts: any[]; monthlyLoad: any[] }>
+        }) => Promise<{ shifts: Shift[]; monthlyLoad: any[] }>
         getYearlyLoad: (year: number) => Promise<any[]>
-        updateStatus: (params: { id: number; estado: string }) => Promise<void>
+        updateStatus: (params: { id: number; estado: EstadoTurno }) => Promise<void>
       }
       services: {
         getPaginated: (params: {
@@ -77,7 +90,7 @@ declare global {
         }) => Promise<{ services: Service[]; total: number }>
         getAll: () => Promise<Service[]>
         create: (nombre: string) => Promise<any>
-        update: (id: number, nombre: string) => Promise<void>
+        update: (params: { id: number; nombre: string }) => Promise<void>
         toggle: (id: number) => Promise<number>
         delete: (id: number) => Promise<void>
       }
@@ -93,8 +106,8 @@ declare global {
         }) => Promise<{ customers: Customer[]; total: number }>
         findByDocument: (documento: string) => Promise<Customer | undefined>
         create: (data: any) => Promise<number>
-        update: (id: number | string, data: any) => Promise<void>
-        delete: (id: number | string) => Promise<void>
+        update: (id: number, data: any) => Promise<void>
+        delete: (id: number) => Promise<void>
       }
     }
   }

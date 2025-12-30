@@ -31,13 +31,13 @@ const api = {
     updateStatus: (params) => ipcRenderer.invoke('shift:updateStatus', params)
   },
   services: {
-    getPaginated: (params: { page: number; limit: number; search: string }) =>
-      ipcRenderer.invoke('services:getPaginated', params),
+    getPaginated: (params) => ipcRenderer.invoke('services:getPaginated', params),
     getAll: () => ipcRenderer.invoke('services:getAll'),
-    create: (nombre: string) => ipcRenderer.invoke('services:create', nombre),
-    update: (id: number, nombre: string) => ipcRenderer.invoke('services:update', { id, nombre }),
-    toggle: (id: number) => ipcRenderer.invoke('services:toggle', id),
-    delete: (id: number) => ipcRenderer.invoke('services:delete', id)
+    create: (nombre) => ipcRenderer.invoke('services:create', nombre),
+    update: (params: { id: number; nombre: string }) =>
+      ipcRenderer.invoke('services:update', params),
+    toggle: (id) => ipcRenderer.invoke('services:toggle', id),
+    delete: (id) => ipcRenderer.invoke('services:delete', id)
   },
   customers: {
     getPaginated: (params) => ipcRenderer.invoke('customers:getPaginated', params),

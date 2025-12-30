@@ -1,5 +1,3 @@
-// src/renderer/src/modules/shift/types.ts
-
 export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'ausente'
 
 export interface Shift {
@@ -18,8 +16,14 @@ export interface NewShiftData {
   fecha?: string
   hora: string
   cliente: string
-  servicio: string
-  customerId?: number
+  servicio: string[]
+  customerId?: number | null
+  createCustomer?: {
+    nombre: string
+    apellido: string
+    documento: string
+    telefono?: string
+  }
 }
 
 export interface ShiftConfig {

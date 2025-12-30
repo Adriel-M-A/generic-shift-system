@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
+import { parseError } from '@lib/error-utils'
 
 export function useServices(page: number, limit: number, search: string) {
   const [services, setServices] = useState<any[]>([])
@@ -14,7 +15,7 @@ export function useServices(page: number, limit: number, search: string) {
       setServices(result.services)
       setTotal(result.total)
     } catch (error) {
-      toast.error('Error al cargar servicios')
+      toast.error(parseError(error))
     } finally {
       setIsLoading(false)
     }
@@ -36,8 +37,20 @@ export function useServices(page: number, limit: number, search: string) {
       toast.success('Servicio creado')
       fetchServices(page, limit, search)
       return true
-    } catch (error: any) {
-      toast.error(error.message)
+    } catch (error) {
+      toast.error(parseError(error))
+      return false
+    }
+  }
+
+  const updateService = async (id: number, nombre: string) => {
+    try {
+      await window.api.services.update({ id, nombre })
+      toast.success('Servicio actualizado')
+      fetchServices(page, limit, search)
+      return true
+    } catch (error) {
+      toast.error(parseError(error))
       return false
     }
   }
@@ -63,5 +76,5 @@ export function useServices(page: number, limit: number, search: string) {
     }
   }
 
-  return { services, total, isLoading, createService, toggleService, deleteService }
+  return { services, total, isLoading, createService, updateService, toggleService, deleteService }
 }

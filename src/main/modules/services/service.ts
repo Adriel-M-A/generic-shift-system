@@ -37,7 +37,9 @@ export class ServicesService {
   }
 
   getAll() {
-    return this.db.prepare('SELECT * FROM servicios ORDER BY nombre ASC').all() as Service[]
+    return this.db
+      .prepare('SELECT * FROM servicios WHERE activo = 1 ORDER BY nombre ASC')
+      .all() as Service[]
   }
 
   create(nombre: string) {

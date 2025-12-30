@@ -25,31 +25,18 @@ export function CustomerDialog({ open, onOpenChange, customer, onSubmit }: Custo
     register,
     handleSubmit,
     reset,
-    setValue,
-    formState: { isSubmitting }
+    formState: { isSubmitting, errors }
   } = useForm<CustomerFormData>()
 
   useEffect(() => {
-    if (customer) {
-      setValue('documento', customer.documento)
-      setValue('nombre', customer.nombre)
-      setValue('apellido', customer.apellido)
-      setValue('telefono', customer.telefono || '')
-      setValue('email', customer.email || '')
-    } else {
-      reset({
-        documento: '',
-        nombre: '',
-        apellido: '',
-        telefono: '',
-        email: ''
-      })
+    if (open) {
+      reset(customer || { documento: '', nombre: '', apellido: '', telefono: '', email: '' })
     }
-  }, [customer, open, reset, setValue])
+  }, [customer, open, reset])
 
   const onFormSubmit = async (data: CustomerFormData) => {
-    await onSubmit(data)
-    // El cierre del modal lo maneja el componente padre si el submit es exitoso
+    const success = await onSubmit(data)
+    if (success) onOpenChange(false)
   }
 
   return (
@@ -58,44 +45,50 @@ export function CustomerDialog({ open, onOpenChange, customer, onSubmit }: Custo
         <DialogHeader>
           <DialogTitle>{customer ? 'Editar Cliente' : 'Crear Nuevo Cliente'}</DialogTitle>
           <DialogDescription>
-            {customer
-              ? 'Modifica los datos del cliente seleccionado.'
-              : 'Agrega un nuevo cliente a la base de datos.'}
+            {customer ? 'Modifica los datos del cliente.' : 'Agrega un nuevo cliente.'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onFormSubmit)}>
-          <div className="grid gap-4 py-4">
+        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="documento">Documento / DNI</Label>
+            <Input
+              id="documento"
+              {...register('documento', { required: 'El documento es obligatorio' })}
+              className={errors.documento ? 'border-destructive' : ''}
+            />
+            {errors.documento && (
+              <p className="text-xs text-destructive">{errors.documento.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="documento">Documento / DNI</Label>
+              <Label htmlFor="nombre">Nombre</Label>
               <Input
-                id="documento"
-                placeholder="Ej. 12345678"
-                autoFocus
-                {...register('documento', { required: true })}
+                id="nombre"
+                {...register('nombre', { required: 'Obligatorio' })}
+                className={errors.nombre ? 'border-destructive' : ''}
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="nombre">Nombre</Label>
-                <Input id="nombre" {...register('nombre', { required: true })} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="apellido">Apellido</Label>
-                <Input id="apellido" {...register('apellido', { required: true })} />
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="apellido">Apellido</Label>
+              <Input
+                id="apellido"
+                {...register('apellido', { required: 'Obligatorio' })}
+                className={errors.apellido ? 'border-destructive' : ''}
+              />
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="telefono">Teléfono (Opcional)</Label>
-                <Input id="telefono" {...register('telefono')} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email (Opcional)</Label>
-                <Input id="email" type="email" {...register('email')} />
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="telefono">Teléfono</Label>
+              <Input id="telefono" {...register('telefono')} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" {...register('email')} />
             </div>
           </div>
 

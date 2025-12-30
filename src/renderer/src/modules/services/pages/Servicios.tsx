@@ -40,11 +40,8 @@ const LIMIT = 15
 export default function Servicios() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const { services, total, isLoading, createService, toggleService, deleteService } = useServices(
-    page,
-    LIMIT,
-    search
-  )
+  const { services, total, isLoading, createService, updateService, toggleService, deleteService } =
+    useServices(page, LIMIT, search)
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<{ id: number; nombre: string } | undefined>(
@@ -99,8 +96,8 @@ export default function Servicios() {
           <TableHeader className="sticky top-0 z-20 bg-card">
             <TableRow className="hover:bg-transparent border-none">
               <TableHead className="h-12 pl-6">Nombre del Servicio</TableHead>
-              <TableHead className="h-12 w-[120px]">Estado</TableHead>
-              <TableHead className="text-right pr-6 h-12 w-[100px]">Acciones</TableHead>
+              <TableHead className="h-12 w-30">Estado</TableHead>
+              <TableHead className="text-right pr-6 h-12 w-25">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -124,7 +121,7 @@ export default function Servicios() {
                     <Switch checked={s.activo === 1} onCheckedChange={() => toggleService(s.id)} />
                   </TableCell>
                   <TableCell className="text-right pr-6 py-3">
-                    <div className="hidden sm:flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -141,24 +138,6 @@ export default function Servicios() {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </div>
-                    <div className="sm:hidden flex justify-end">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(s)}>Editar</DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setDeleteId(s.id)}
-                          >
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -198,8 +177,7 @@ export default function Servicios() {
         onOpenChange={setIsDialogOpen}
         service={editingService}
         onSubmit={async (nombre) => {
-          if (editingService)
-            return await window.api.services.update(editingService.id, nombre).then(() => true)
+          if (editingService) return await updateService(editingService.id, nombre)
           return await createService(nombre)
         }}
       />
