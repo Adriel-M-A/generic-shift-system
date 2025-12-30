@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { parseError } from '@lib/error-utils'
-import { Customer, CustomerFormData } from '../types'
+import { Customer, CustomerFormData } from '@shared/types/customer'
 
 export function useCustomers(page: number, limit: number, search: string) {
   const [customers, setCustomers] = useState<Customer[]>([])

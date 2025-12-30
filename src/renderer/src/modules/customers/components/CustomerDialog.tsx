@@ -11,7 +11,7 @@ import {
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Label } from '@ui/label'
-import { Customer, CustomerFormData } from '../types'
+import { Customer, CustomerFormData } from '@shared/types/customer'
 
 interface CustomerDialogProps {
   open: boolean

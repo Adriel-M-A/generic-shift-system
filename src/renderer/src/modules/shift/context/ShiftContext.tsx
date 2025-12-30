@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react'
-import { Shift, NewShiftData, ShiftConfig, EstadoTurno } from '../types'
+import { Shift, NewShiftData, ShiftConfig, EstadoTurno } from '@shared/types/shift'
 import { parseError } from '@lib/error-utils'
 
 interface ShiftContextType {

@@ -32,7 +32,7 @@ import {
 } from '@ui/dropdown-menu'
 
 import { useCustomers } from '../hooks/useCustomers'
-import { Customer } from '../types'
+import { Customer } from '@shared/types/customer'
 import { CustomerDialog } from '../components/CustomerDialog'
 
 const ITEMS_PER_PAGE = 15

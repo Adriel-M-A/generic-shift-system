@@ -27,7 +27,7 @@ import {
 import { Separator } from '@ui/separator'
 import { useShifts } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
-import { Customer } from '@customers/types'
+import { Customer } from '@shared/types/customer'
 import { formatDateHeader } from '../utils'
 import { Badge } from '@ui/badge'
 

@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { EstadoTurno } from './types'
+import { EstadoTurno } from '@shared/types/shift'
 
 export function formatDateHeader(date: Date): string {
   return format(date, "EEEE d 'de' MMMM", { locale: es })
