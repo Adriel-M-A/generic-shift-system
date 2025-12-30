@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
-import { Customer, CustomerFormData } from '../types'
+import { parseError } from '@lib/error-utils'
+import { Customer, CustomerFormData } from '@shared/types/customer'
 
 export function useCustomers(page: number, limit: number, search: string) {
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -15,8 +16,7 @@ export function useCustomers(page: number, limit: number, search: string) {
       setCustomers(result.customers)
       setTotal(result.total)
     } catch (error) {
-      console.error(error)
-      toast.error('Error al cargar la lista de clientes')
+      toast.error(parseError(error))
     } finally {
       setIsLoading(false)
     }
@@ -24,11 +24,9 @@ export function useCustomers(page: number, limit: number, search: string) {
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
-
     debounceTimer.current = setTimeout(() => {
       fetchCustomers(page, limit, search)
     }, 300)
-
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current)
     }
@@ -37,52 +35,38 @@ export function useCustomers(page: number, limit: number, search: string) {
   const createCustomer = async (data: CustomerFormData) => {
     try {
       await window.api.customers.create(data)
-      toast.success('Cliente creado correctamente')
+      toast.success('Cliente creado')
       fetchCustomers(page, limit, search)
       return true
-    } catch (error: any) {
-      const message = error.message.includes('Error:')
-        ? error.message.split('Error: ')[1]
-        : 'Error al crear cliente'
-      toast.error(message)
+    } catch (error) {
+      toast.error(parseError(error))
       return false
     }
   }
 
-  const updateCustomer = async (id: string | number, data: CustomerFormData) => {
+  const updateCustomer = async (id: number, data: CustomerFormData) => {
     try {
       await window.api.customers.update(id, data)
-      toast.success('Cliente actualizado correctamente')
+      toast.success('Cliente actualizado')
       fetchCustomers(page, limit, search)
       return true
-    } catch (error: any) {
-      const message = error.message.includes('Error:')
-        ? error.message.split('Error: ')[1]
-        : 'Error al actualizar cliente'
-      toast.error(message)
+    } catch (error) {
+      toast.error(parseError(error))
       return false
     }
   }
 
-  const deleteCustomer = async (id: string | number) => {
+  const deleteCustomer = async (id: number) => {
     try {
       await window.api.customers.delete(id)
       toast.success('Cliente eliminado')
       fetchCustomers(page, limit, search)
       return true
     } catch (error) {
-      toast.error('Error al eliminar cliente')
+      toast.error(parseError(error))
       return false
     }
   }
 
-  return {
-    customers,
-    total,
-    isLoading,
-    createCustomer,
-    updateCustomer,
-    deleteCustomer,
-    refresh: () => fetchCustomers(page, limit, search)
-  }
+  return { customers, total, isLoading, createCustomer, updateCustomer, deleteCustomer }
 }

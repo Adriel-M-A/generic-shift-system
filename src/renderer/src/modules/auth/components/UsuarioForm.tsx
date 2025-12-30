@@ -12,7 +12,7 @@ import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Spinner } from '@ui/spinner'
 import { toast } from 'sonner'
-import { User } from '../context/AuthContext'
+import { User } from '@shared/types'
 import { Shield, ShieldAlert, Eye, Save } from 'lucide-react'
 
 interface UsuarioFormProps {

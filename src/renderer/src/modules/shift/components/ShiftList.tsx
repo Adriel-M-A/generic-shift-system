@@ -1,6 +1,6 @@
 import { Clock } from 'lucide-react'
 import { ScrollArea } from '@ui/scroll-area'
-import { Shift } from '../types'
+import { Shift } from '@shared/types/shift'
 import { ShiftCard } from './ShiftCard'
 import { useShifts } from '../hooks/useShifts'
 

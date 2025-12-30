@@ -1,7 +1,7 @@
 import { useContext } from 'react'
 import { toast } from 'sonner'
 import { ShiftContext } from '../context/ShiftContext'
-import { NewShiftData, EstadoTurno } from '../types'
+import { NewShiftData, EstadoTurno } from '@shared/types/shift'
 import { parseError } from '@lib/error-utils'
 
 export function useShifts() {

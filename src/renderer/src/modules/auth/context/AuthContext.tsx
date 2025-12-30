@@ -1,20 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { FLAGS } from '@config/flags'
 import { parseError } from '@lib/error-utils'
-
-export interface User {
-  id: number
-  nombre: string
-  apellido: string
-  usuario: string
-  level: number
-  last_login?: string
-  created_at?: string
-}
+import { User, AuthResponse, Role } from '@shared/types'
 
 interface AuthContextType {
   user: User | null
-  login: (usuario: string, password: string) => Promise<{ success: boolean; message?: string }>
+  login: (usuario: string, password: string) => Promise<AuthResponse>
   updateProfile: (data: Partial<User>) => Promise<boolean>
   changePassword: (
     currentPass: string,
@@ -32,10 +23,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [permissions, setPermissions] = useState<string[]>([])
 
-  // En tu App.tsx, isLogin significa "mostrar pantalla de login", por eso es true si no hay user
+  // isLogin indica si el usuario NO está autenticado (se muestra pantalla de login)
   const isLogin = !user
 
   const loadUserPermissions = async (userLevel: number) => {
+    // El nivel 1 siempre es Administrador con acceso total
     if (userLevel === 1) {
       setPermissions(['*'])
       return
@@ -43,11 +35,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const result = await window.api.roles.getAll()
       if (result.success) {
-        const myRole = result.roles.find((r: any) => r.id === userLevel)
+        // Tipamos correctamente el rol encontrado
+        const myRole = result.roles.find((r: Role) => r.id === userLevel)
         if (myRole) setPermissions(myRole.permissions)
       }
     } catch (error) {
-      console.error('Error cargando permisos', error)
+      console.error('Error cargando permisos:', error)
     }
   }
 
@@ -57,9 +50,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.api.window.setAppSize()
       return
     }
+
     const savedUser = sessionStorage.getItem('user_session')
     if (savedUser) {
-      const parsedUser = JSON.parse(savedUser)
+      const parsedUser: User = JSON.parse(savedUser)
       setUser(parsedUser)
       loadUserPermissions(parsedUser.level)
       window.api.window.setAppSize()
@@ -68,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [])
 
-  const login = async (usuario: string, password: string) => {
+  const login = async (usuario: string, password: string): Promise<AuthResponse> => {
     try {
       const response = await window.api.auth.login({ usuario, password })
 
@@ -81,9 +75,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       return { success: false, message: response.message }
     } catch (error) {
-      // Ahora parseError devolverá "Contraseña incorrecta" o "Usuario no encontrado" limpiamente
       const rawMessage = parseError(error)
 
+      // Unificamos el mensaje para no dar pistas a atacantes
       if (rawMessage === 'Usuario no encontrado' || rawMessage === 'Contraseña incorrecta') {
         return { success: false, message: 'Usuario o contraseña incorrectos' }
       }
@@ -102,7 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hasPermission = (permissionId: string): boolean => {
     if (!FLAGS.ENABLE_AUTH || user?.level === 1) return true
-    return permissions.includes(permissionId)
+    return permissions.includes(permissionId) || permissions.includes('*')
   }
 
   return (
@@ -111,8 +105,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         login,
         logout,
-        updateProfile: async (data) => true, // Simplificado para el ejemplo
-        changePassword: async (c, n) => ({ success: true }),
+        updateProfile: async () => true,
+        changePassword: async () => ({ success: true }),
         isAdmin: user?.level === 1,
         isLogin,
         hasPermission

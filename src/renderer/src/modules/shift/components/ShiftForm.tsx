@@ -6,12 +6,10 @@ import {
   Briefcase,
   ChevronDown,
   ChevronUp,
-  Check,
   Search,
   User as UserIcon,
   Loader2,
   UserPlus,
-  Phone,
   X
 } from 'lucide-react'
 import { Button } from '@ui/button'
@@ -29,7 +27,7 @@ import {
 import { Separator } from '@ui/separator'
 import { useShifts } from '../hooks/useShifts'
 import { cn } from '@lib/utils'
-import { Customer } from '@customers/types'
+import { Customer } from '@shared/types/customer'
 import { formatDateHeader } from '../utils'
 import { Badge } from '@ui/badge'
 
@@ -41,7 +39,7 @@ export function ShiftForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
 
-  // Horario
+  // Horario (Restaurada lógica original)
   const [hour, setHour] = useState(9)
   const [minute, setMinute] = useState(0)
 
@@ -66,12 +64,12 @@ export function ShiftForm() {
   useEffect(() => {
     async function fetchServices() {
       const data = await window.api.services.getAll()
-      setAvailableServices(data.filter((s: any) => s.activo === 1).map((s: any) => s.nombre))
+      setAvailableServices(data.map((s: any) => s.nombre))
     }
     if (open) fetchServices()
   }, [open])
 
-  // LÓGICA DE TIEMPO CONTINUO
+  // LÓGICA DE TIEMPO CONTINUO (Restaurada)
   const handleHourChange = (val: number) => {
     if (val > 23) setHour(0)
     else if (val < 0) setHour(23)
@@ -126,10 +124,10 @@ export function ShiftForm() {
   const removeService = (srv: string) =>
     setSelectedServices(selectedServices.filter((s) => s !== srv))
 
-  // VALIDACIÓN: El cliente es válido si fue encontrado o si tiene nombre y apellido cargados
   const isClientValid =
     foundCustomer ||
     (customerData.nombre.trim().length > 0 && customerData.apellido.trim().length > 0)
+
   const canSubmit =
     isClientValid && selectedServices.length > 0 && searchDoc.length > 0 && !isSubmitting
 
@@ -140,15 +138,15 @@ export function ShiftForm() {
 
     const finalTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
 
-    // Enviamos los datos. El cast 'as any' asegura que no haya errores de tipo si el d.ts tarda en refrescar
+    // Ahora enviamos los datos compatibles con el nuevo tipo NewShiftData
     const success = await createShift({
       fecha: currentDate.toISOString().split('T')[0],
       hora: finalTime,
       cliente: `${customerData.apellido} ${customerData.nombre}`,
-      servicio: selectedServices as any,
-      customerId: foundCustomer?.id ?? undefined,
+      servicio: selectedServices, // Array de strings
+      customerId: foundCustomer?.id || undefined,
       createCustomer: !foundCustomer ? { ...customerData, documento: searchDoc } : undefined
-    } as any)
+    })
 
     if (success) {
       setOpen(false)
@@ -167,7 +165,7 @@ export function ShiftForm() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[800px] p-0 overflow-visible block border-none shadow-2xl">
+      <DialogContent className="sm:max-w-200 p-0 overflow-visible block border-none shadow-2xl">
         <form onSubmit={handleSubmit}>
           <div className="p-10">
             <DialogHeader className="mb-12">
@@ -246,7 +244,7 @@ export function ShiftForm() {
                       <ChevronDown className="h-4 w-4 text-muted-foreground/60" />
                     )}
                     {isServiceOpen && (
-                      <div className="absolute top-[calc(100%+6px)] left-0 w-full z-[100] bg-background border border-muted-foreground/20 rounded-xl shadow-2xl max-h-48 overflow-y-auto animate-in fade-in-0 zoom-in-95">
+                      <div className="absolute top-[calc(100%+6px)] left-0 w-full z-100 bg-background border border-muted-foreground/20 rounded-xl shadow-2xl max-h-48 overflow-y-auto animate-in fade-in-0 zoom-in-95">
                         {availableServices
                           .filter((s) => s.toLowerCase().includes(serviceSearch.toLowerCase()))
                           .map((srv) => (
@@ -258,6 +256,7 @@ export function ShiftForm() {
                                 if (!selectedServices.includes(srv))
                                   setSelectedServices([...selectedServices, srv])
                                 setIsServiceOpen(false)
+                                setServiceSearch('')
                               }}
                             >
                               {srv}
@@ -266,7 +265,7 @@ export function ShiftForm() {
                       </div>
                     )}
                   </div>
-                  <div className="max-h-[82px] overflow-y-auto p-2 rounded-lg bg-muted/20 border border-dashed border-muted-foreground/10 flex flex-wrap gap-2">
+                  <div className="max-h-20.5 overflow-y-auto p-2 rounded-lg bg-muted/20 border border-dashed border-muted-foreground/10 flex flex-wrap gap-2">
                     {selectedServices.map((srv) => (
                       <Badge
                         key={srv}

@@ -32,7 +32,7 @@ import {
 } from '@ui/dropdown-menu'
 
 import { useCustomers } from '../hooks/useCustomers'
-import { Customer } from '../types'
+import { Customer } from '@shared/types/customer'
 import { CustomerDialog } from '../components/CustomerDialog'
 
 const ITEMS_PER_PAGE = 15
@@ -45,7 +45,8 @@ export default function Customers() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>(undefined)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1
 
@@ -69,7 +70,7 @@ export default function Customers() {
   }
 
   const handleDeleteConfirm = async () => {
-    if (deleteId) {
+    if (deleteId !== null) {
       await deleteCustomer(deleteId)
       setDeleteId(null)
     }
@@ -105,11 +106,11 @@ export default function Customers() {
         <table className="w-full text-sm text-left">
           <TableHeader className="sticky top-0 z-20 bg-card">
             <TableRow className="hover:bg-transparent border-none">
-              <TableHead className="h-12 pl-6 w-[150px]">Documento</TableHead>
-              <TableHead className="h-12 min-w-[200px]">Nombre Completo</TableHead>
-              <TableHead className="h-12 min-w-[150px]">Teléfono</TableHead>
-              <TableHead className="h-12 min-w-[200px]">Email</TableHead>
-              <TableHead className="text-right pr-6 h-12 w-[100px]">Acciones</TableHead>
+              <TableHead className="h-12 pl-6 w-37.5">Documento</TableHead>
+              <TableHead className="h-12 min-w-50">Nombre Completo</TableHead>
+              <TableHead className="h-12 min-w-37.5">Teléfono</TableHead>
+              <TableHead className="h-12 min-w-50">Email</TableHead>
+              <TableHead className="text-right pr-6 h-12 w-25">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -161,7 +162,8 @@ export default function Customers() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => setDeleteId(customer.id.toString())}
+                        // CORRECCIÓN: Se eliminó .toString()
+                        onClick={() => setDeleteId(customer.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -182,7 +184,8 @@ export default function Customers() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
-                            onClick={() => setDeleteId(customer.id.toString())}
+                            // CORRECCIÓN: Se eliminó .toString()
+                            onClick={() => setDeleteId(customer.id)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                           </DropdownMenuItem>
@@ -238,7 +241,10 @@ export default function Customers() {
         }}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog
+        open={!!deleteId || deleteId === 0}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>

@@ -2,7 +2,7 @@ import { Check, Briefcase, X, RotateCcw, Clock, User, UserCheck, UserX } from 'l
 import { Badge } from '@ui/badge'
 import { Button } from '@ui/button'
 import { Separator } from '@ui/separator'
-import { Shift, EstadoTurno } from '../types'
+import { Shift, EstadoTurno } from '@shared/types/shift'
 import { cn } from '@lib/utils'
 import { getStatusStyles, getStatusLabel } from '../utils'
 

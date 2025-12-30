@@ -1,21 +1,12 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-
-interface Customer {
-  id: number
-  documento: string
-  nombre: string
-  apellido: string
-  telefono?: string
-  email?: string
-  created_at?: string
-  updated_at?: string
-}
-
-interface Service {
-  id: number
-  nombre: string
-  activo: number
-}
+import {
+  Customer,
+  CustomerFormData,
+  Service,
+  Shift,
+  NewShiftData,
+  EstadoTurno
+} from '../shared/types'
 
 declare global {
   interface Window {
@@ -29,45 +20,32 @@ declare global {
         setAppSize: () => void
       }
       auth: {
-        login: (credentials: any) => Promise<any>
-        createUser: (userData: any) => Promise<any>
-        updateUser: (id: number, data: any) => Promise<any>
-        changePassword: (id: number, current: string, newPass: string) => Promise<any>
-        getUsers: () => Promise<{ success: boolean; users: any[] }>
+        login: (credentials: any) => Promise<AuthResponse>
+        createUser: (userData: UserFormData) => Promise<{ success: boolean; id: number }>
+        updateUser: (id: number, data: UserFormData) => Promise<{ success: boolean }>
+        changePassword: (
+          id: number,
+          current: string,
+          newPass: string
+        ) => Promise<{ success: boolean }>
+        getUsers: () => Promise<User[]>
         deleteUser: (id: number) => Promise<{ success: boolean }>
       }
       roles: {
-        getAll: () => Promise<{ success: boolean; roles: any[] }>
-        update: (data: {
-          id: number
-          label: string
-          permissions: string[]
-        }) => Promise<{ success: boolean }>
+        getAll: () => Promise<{ success: boolean; roles: Role[] }>
+        update: (data: Role) => Promise<{ success: boolean }>
       }
       shift: {
-        create: (data: {
-          fecha: string
-          hora: string
-          cliente: string
-          servicio: string[] // Array de servicios
-          customerId?: number | undefined // Cambiado para evitar error de null
-          createCustomer?: {
-            // Definimos la propiedad para que TS la reconozca
-            nombre: string
-            apellido: string
-            documento: string
-            telefono?: string
-          }
-        }) => Promise<number>
-        getByDate: (date: string) => Promise<any[]>
+        create: (data: NewShiftData) => Promise<number>
+        getByDate: (date: string) => Promise<Shift[]>
         getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
         getInitialData: (params: {
           date: string
           year: number
           month: number
-        }) => Promise<{ shifts: any[]; monthlyLoad: any[] }>
+        }) => Promise<{ shifts: Shift[]; monthlyLoad: any[] }>
         getYearlyLoad: (year: number) => Promise<any[]>
-        updateStatus: (params: { id: number; estado: string }) => Promise<void>
+        updateStatus: (params: { id: number; estado: EstadoTurno }) => Promise<void>
       }
       services: {
         getPaginated: (params: {
@@ -77,13 +55,13 @@ declare global {
         }) => Promise<{ services: Service[]; total: number }>
         getAll: () => Promise<Service[]>
         create: (nombre: string) => Promise<any>
-        update: (id: number, nombre: string) => Promise<void>
+        update: (params: { id: number; nombre: string }) => Promise<void>
         toggle: (id: number) => Promise<number>
         delete: (id: number) => Promise<void>
       }
       settings: {
-        getAll: () => Promise<Record<string, string>>
-        setMany: (settings: Record<string, string>) => Promise<any>
+        getAll: () => Promise<AppSettings>
+        setMany: (settings: Partial<AppSettings>) => Promise<{ success: boolean }>
       }
       customers: {
         getPaginated: (params: {
@@ -92,9 +70,9 @@ declare global {
           search: string
         }) => Promise<{ customers: Customer[]; total: number }>
         findByDocument: (documento: string) => Promise<Customer | undefined>
-        create: (data: any) => Promise<number>
-        update: (id: number | string, data: any) => Promise<void>
-        delete: (id: number | string) => Promise<void>
+        create: (data: CustomerFormData) => Promise<number>
+        update: (id: number, data: CustomerFormData) => Promise<void>
+        delete: (id: number) => Promise<void>
       }
     }
   }
