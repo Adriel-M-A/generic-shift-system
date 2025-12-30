@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react'
-import { Shift, NewShiftData, ShiftConfig, EstadoTurno } from '@shared/types/shift'
+import { Shift, NewShiftData, ShiftConfig, EstadoTurno } from '@shared/types'
 import { parseError } from '@lib/error-utils'
 
 interface ShiftContextType {
@@ -54,7 +54,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
           openingTime: settings.shift_opening || DEFAULT_CONFIG.openingTime,
           closingTime: settings.shift_closing || DEFAULT_CONFIG.closingTime,
           interval: Number(settings.shift_interval) || DEFAULT_CONFIG.interval,
-          startOfWeek: (settings.calendar_start_day as any) || DEFAULT_CONFIG.startOfWeek,
+          startOfWeek: settings.calendar_start_day || DEFAULT_CONFIG.startOfWeek,
           showCompleted: settings.show_completed === 'true',
           showCancelled: settings.show_cancelled === 'true',
           showAbsent: settings.show_absent === 'true',
@@ -65,7 +65,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
         })
       }
     } catch (e) {
-      console.error(e)
+      console.error('Error cargando configuración:', e)
     }
   }
 
@@ -90,7 +90,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
       }
       setDailyLoads(loadsMap)
     } catch (error) {
-      console.error(error)
+      console.error('Error al obtener turnos:', error)
     } finally {
       setLoading(false)
     }

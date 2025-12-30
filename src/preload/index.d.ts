@@ -20,20 +20,20 @@ declare global {
         setAppSize: () => void
       }
       auth: {
-        login: (credentials: any) => Promise<any>
-        createUser: (userData: any) => Promise<any>
-        updateUser: (id: number, data: any) => Promise<any>
-        changePassword: (id: number, current: string, newPass: string) => Promise<any>
-        getUsers: () => Promise<{ success: boolean; users: any[] }>
+        login: (credentials: any) => Promise<AuthResponse>
+        createUser: (userData: UserFormData) => Promise<{ success: boolean; id: number }>
+        updateUser: (id: number, data: UserFormData) => Promise<{ success: boolean }>
+        changePassword: (
+          id: number,
+          current: string,
+          newPass: string
+        ) => Promise<{ success: boolean }>
+        getUsers: () => Promise<User[]>
         deleteUser: (id: number) => Promise<{ success: boolean }>
       }
       roles: {
-        getAll: () => Promise<{ success: boolean; roles: any[] }>
-        update: (data: {
-          id: number
-          label: string
-          permissions: string[]
-        }) => Promise<{ success: boolean }>
+        getAll: () => Promise<{ success: boolean; roles: Role[] }>
+        update: (data: Role) => Promise<{ success: boolean }>
       }
       shift: {
         create: (data: NewShiftData) => Promise<number>
@@ -60,8 +60,8 @@ declare global {
         delete: (id: number) => Promise<void>
       }
       settings: {
-        getAll: () => Promise<Record<string, string>>
-        setMany: (settings: Record<string, string>) => Promise<any>
+        getAll: () => Promise<AppSettings>
+        setMany: (settings: Partial<AppSettings>) => Promise<{ success: boolean }>
       }
       customers: {
         getPaginated: (params: {

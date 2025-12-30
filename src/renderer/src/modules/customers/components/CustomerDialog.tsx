@@ -11,7 +11,7 @@ import {
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Label } from '@ui/label'
-import { Customer, CustomerFormData } from '@shared/types/customer'
+import { Customer, CustomerFormData } from '@shared/types'
 
 interface CustomerDialogProps {
   open: boolean
@@ -30,7 +30,13 @@ export function CustomerDialog({ open, onOpenChange, customer, onSubmit }: Custo
 
   useEffect(() => {
     if (open) {
-      reset(customer || { documento: '', nombre: '', apellido: '', telefono: '', email: '' })
+      reset({
+        documento: customer?.documento || '',
+        nombre: customer?.nombre || '',
+        apellido: customer?.apellido || '',
+        telefono: customer?.telefono || '',
+        email: customer?.email || ''
+      })
     }
   }, [customer, open, reset])
 
@@ -41,7 +47,7 @@ export function CustomerDialog({ open, onOpenChange, customer, onSubmit }: Custo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>{customer ? 'Editar Cliente' : 'Crear Nuevo Cliente'}</DialogTitle>
           <DialogDescription>

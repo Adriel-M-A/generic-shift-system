@@ -26,3 +26,17 @@ export interface NewShiftData {
     telefono?: string
   }
 }
+
+export interface ShiftConfig {
+  openingTime: string
+  closingTime: string
+  interval: number
+  startOfWeek: 'monday' | 'sunday'
+  showCompleted: boolean
+  showCancelled: boolean
+  showAbsent: boolean
+  thresholds: {
+    low: number
+    medium: number
+  }
+}
