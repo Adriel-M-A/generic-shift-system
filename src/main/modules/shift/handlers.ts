@@ -45,4 +45,12 @@ export function registerShiftHandlers(service: ShiftService) {
     const validated = UpdateStatusSchema.parse(params)
     return service.updateStatus(validated.id, validated.estado)
   })
+
+  ipcMain.handle('shift:getHistoryByCustomer', (_, customerId: number) => {
+    return service.getHistoryByCustomer(customerId)
+  })
+
+  ipcMain.handle('shift:searchGlobal', (_, query: string) => {
+    return service.searchGlobal(query)
+  })
 }

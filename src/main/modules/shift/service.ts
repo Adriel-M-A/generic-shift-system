@@ -71,4 +71,28 @@ export class ShiftService {
   updateStatus(id: number, estado: string): void {
     this.db.prepare('UPDATE shifts SET estado = ? WHERE id = ?').run(estado, id)
   }
+
+  getHistoryByCustomer(customerId: number): Shift[] {
+    return this.db
+      .prepare('SELECT * FROM shifts WHERE customer_id = ? ORDER BY fecha DESC, hora DESC')
+      .all(customerId) as Shift[]
+  }
+
+  searchGlobal(query: string): Shift[] {
+    const searchTerm = `%${query}%`
+    return this.db
+      .prepare(
+        `
+        SELECT s.* FROM shifts s
+        LEFT JOIN customers c ON s.customer_id = c.id
+        WHERE s.cliente LIKE ? 
+           OR c.nombre LIKE ? 
+           OR c.apellido LIKE ? 
+           OR c.documento LIKE ?
+        ORDER BY s.fecha DESC, s.hora DESC
+        LIMIT 50
+      `
+      )
+      .all(searchTerm, searchTerm, searchTerm, searchTerm) as Shift[]
+  }
 }

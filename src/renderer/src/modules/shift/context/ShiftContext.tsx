@@ -7,7 +7,9 @@ interface ShiftContextType {
   view: 'month' | 'year'
   shifts: Shift[]
   filteredShifts: Shift[]
+  searchResults: Shift[]
   loading: boolean
+  searching: boolean
   config: ShiftConfig
   getDailyLoad: (date: Date) => number
   changeDate: (date: Date) => void
@@ -16,6 +18,9 @@ interface ShiftContextType {
   changeShiftStatus: (id: number, estado: EstadoTurno) => Promise<void>
   updateConfig: (newConfig: ShiftConfig) => Promise<void>
   fetchShiftsAndLoads: () => Promise<void>
+  searchShifts: (query: string) => Promise<void>
+  getCustomerHistory: (customerId: number) => Promise<Shift[]>
+  clearSearch: () => void
 }
 
 const ShiftContext = createContext<ShiftContextType | undefined>(undefined)
@@ -35,8 +40,10 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [view, setView] = useState<'month' | 'year'>('month')
   const [shifts, setShifts] = useState<Shift[]>([])
+  const [searchResults, setSearchResults] = useState<Shift[]>([])
   const [dailyLoads, setDailyLoads] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(false)
+  const [searching, setSearching] = useState(false)
   const [config, setConfig] = useState<ShiftConfig>(DEFAULT_CONFIG)
 
   const toLocalISODate = (d: Date): string => {
@@ -65,7 +72,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
         })
       }
     } catch (e) {
-      console.error('Error cargando configuración:', e)
+      console.error(e)
     }
   }
 
@@ -76,39 +83,49 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
       const month = currentDate.getMonth() + 1
       const dateStr = toLocalISODate(currentDate)
 
-      // 1. Siempre obtenemos los turnos del día seleccionado para la lista/sidebar
-      const { shifts: dayShifts } = await window.api.shift.getInitialData({
-        date: dateStr,
-        year,
-        month
-      })
-      setShifts(dayShifts)
+      const response = await window.api.shift.getInitialData({ date: dateStr, year, month })
+      setShifts(response.shifts)
 
-      // 2. Obtenemos la carga de datos según la vista
-      let loadsArray = []
+      let loadsArray: any[] = []
       if (view === 'year') {
-        // Llamamos al endpoint de año que ya tienes en el backend
         loadsArray = await window.api.shift.getYearlyLoad(year)
       } else {
-        // Si estamos en mes, pedimos solo el mes (contenido en getInitialData o directo)
-        const data = await window.api.shift.getInitialData({ date: dateStr, year, month })
-        loadsArray = data.monthlyLoad
+        loadsArray = response.monthlyLoad
       }
 
-      // 3. Mapeamos los resultados al estado
       const loadsMap: Record<string, number> = {}
       if (Array.isArray(loadsArray)) {
-        loadsArray.forEach((item: any) => {
+        loadsArray.forEach((item) => {
           loadsMap[item.fecha] = item.count
         })
       }
       setDailyLoads(loadsMap)
     } catch (error) {
-      console.error('Error al obtener turnos:', error)
+      console.error(error)
     } finally {
       setLoading(false)
     }
   }, [currentDate, view])
+
+  const searchShifts = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+    setSearching(true)
+    try {
+      const results = await window.api.shift.searchGlobal(query)
+      setSearchResults(results)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const getCustomerHistory = async (customerId: number) => {
+    return await window.api.shift.getHistoryByCustomer(customerId)
+  }
 
   const filteredShifts = useMemo(() => {
     return shifts
@@ -133,7 +150,6 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     loadConfig()
   }, [])
-
   useEffect(() => {
     fetchShiftsAndLoads()
   }, [fetchShiftsAndLoads])
@@ -184,7 +200,9 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
         view,
         shifts,
         filteredShifts,
+        searchResults,
         loading,
+        searching,
         config,
         getDailyLoad,
         changeDate: setCurrentDate,
@@ -192,7 +210,10 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
         addShift,
         changeShiftStatus,
         updateConfig,
-        fetchShiftsAndLoads
+        fetchShiftsAndLoads,
+        searchShifts,
+        getCustomerHistory,
+        clearSearch: () => setSearchResults([])
       }}
     >
       {children}

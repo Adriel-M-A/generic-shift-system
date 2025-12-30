@@ -7,7 +7,9 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
-  Loader2
+  Loader2,
+  History,
+  CalendarDays
 } from 'lucide-react'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
@@ -30,10 +32,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@ui/dropdown-menu'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@ui/sheet'
+import { Badge } from '@ui/badge'
+import { ScrollArea } from '@ui/scroll-area'
 
 import { useCustomers } from '../hooks/useCustomers'
+import { useShifts } from '../../shift/hooks/useShifts'
 import { Customer } from '@shared/types/customer'
+import { Shift } from '@shared/types/shift'
 import { CustomerDialog } from '../components/CustomerDialog'
+import { getStatusStyles, getStatusLabel } from '../../shift/utils'
 
 const ITEMS_PER_PAGE = 15
 
@@ -43,9 +51,13 @@ export default function Customers() {
   const { customers, total, isLoading, createCustomer, updateCustomer, deleteCustomer } =
     useCustomers(currentPage, ITEMS_PER_PAGE, search)
 
+  const { getCustomerHistory, jumpToDate } = useShifts()
+  const [historyCustomer, setHistoryCustomer] = useState<Customer | null>(null)
+  const [history, setHistory] = useState<Shift[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>(undefined)
-
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1
@@ -53,6 +65,24 @@ export default function Customers() {
   useEffect(() => {
     setCurrentPage(1)
   }, [search])
+
+  useEffect(() => {
+    if (historyCustomer) {
+      loadHistory(historyCustomer.id)
+    } else {
+      setHistory([])
+    }
+  }, [historyCustomer])
+
+  const loadHistory = async (id: number) => {
+    setLoadingHistory(true)
+    try {
+      const data = await getCustomerHistory(id)
+      setHistory(data)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
 
   const handleEdit = (customer: Customer) => {
     setEditingCustomer(customer)
@@ -110,7 +140,7 @@ export default function Customers() {
               <TableHead className="h-12 min-w-50">Nombre Completo</TableHead>
               <TableHead className="h-12 min-w-37.5">Teléfono</TableHead>
               <TableHead className="h-12 min-w-50">Email</TableHead>
-              <TableHead className="text-right pr-6 h-12 w-25">Acciones</TableHead>
+              <TableHead className="text-right pr-6 h-12 w-32">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -154,6 +184,15 @@ export default function Customers() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={() => setHistoryCustomer(customer)}
+                        title="Ver Historial"
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
                         onClick={() => handleEdit(customer)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -162,7 +201,6 @@ export default function Customers() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        // CORRECCIÓN: Se eliminó .toString()
                         onClick={() => setDeleteId(customer.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -178,13 +216,15 @@ export default function Customers() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => setHistoryCustomer(customer)}>
+                            <History className="mr-2 h-4 w-4" /> Historial
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(customer)}>
                             <Pencil className="mr-2 h-4 w-4" /> Editar
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
-                            // CORRECCIÓN: Se eliminó .toString()
                             onClick={() => setDeleteId(customer.id)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" /> Eliminar
@@ -224,6 +264,76 @@ export default function Customers() {
           </Button>
         </div>
       </div>
+
+      <Sheet open={!!historyCustomer} onOpenChange={() => setHistoryCustomer(null)}>
+        <SheetContent className="sm:max-w-md border-l shadow-2xl p-0 flex flex-col">
+          <SheetHeader className="p-6 border-b shrink-0 bg-muted/20">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <History className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <SheetTitle className="text-xl">Historial de Turnos</SheetTitle>
+                <SheetDescription className="text-sm font-medium text-foreground/80">
+                  {historyCustomer?.nombre} {historyCustomer?.apellido}
+                </SheetDescription>
+              </div>
+            </div>
+          </SheetHeader>
+
+          <ScrollArea className="flex-1">
+            <div className="p-6 space-y-6">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : history.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground text-sm">
+                  Este cliente aún no tiene turnos registrados.
+                </div>
+              ) : (
+                history.map((h) => {
+                  const styles = getStatusStyles(h.estado)
+                  return (
+                    <div key={h.id} className="relative pl-8 pb-2">
+                      <div className="absolute left-0 top-0 bottom-0 w-px bg-border ml-3" />
+                      <div
+                        className={`absolute left-0 top-1.5 h-6 w-6 rounded-full border-4 border-background shadow-sm ml-0 ${styles.accent.replace('w-1', 'bg-current')}`}
+                      />
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-muted-foreground uppercase">
+                            {h.fecha} - {h.hora}hs
+                          </span>
+                          <Badge className={`text-[10px] shadow-none ${styles.badge}`}>
+                            {getStatusLabel(h.estado)}
+                          </Badge>
+                        </div>
+                        <div className="p-3 rounded-lg border bg-card/50 shadow-none hover:shadow-sm transition-shadow">
+                          <p className="font-bold text-sm leading-tight">{h.servicio}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Button
+                              variant="link"
+                              className="h-auto p-0 text-xs text-primary gap-1"
+                              onClick={() => {
+                                jumpToDate(h.fecha)
+                                setHistoryCustomer(null)
+                              }}
+                            >
+                              <CalendarDays className="h-3 w-3" /> Ver en agenda
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
       <CustomerDialog
         open={isDialogOpen}

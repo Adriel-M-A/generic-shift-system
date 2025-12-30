@@ -1,4 +1,14 @@
-import { Check, Briefcase, X, RotateCcw, Clock, User, UserCheck, UserX } from 'lucide-react'
+import {
+  Check,
+  Briefcase,
+  X,
+  RotateCcw,
+  Clock,
+  User,
+  UserCheck,
+  UserX,
+  Calendar
+} from 'lucide-react'
 import { Badge } from '@ui/badge'
 import { Button } from '@ui/button'
 import { Separator } from '@ui/separator'
@@ -10,9 +20,15 @@ interface ShiftCardProps {
   turno: Shift
   onChangeStatus: (id: number, status: EstadoTurno) => void
   onRequestCancel: (id: number) => void
+  showDate?: boolean
 }
 
-export function ShiftCard({ turno, onChangeStatus, onRequestCancel }: ShiftCardProps) {
+export function ShiftCard({
+  turno,
+  onChangeStatus,
+  onRequestCancel,
+  showDate = false
+}: ShiftCardProps) {
   const styles = getStatusStyles(turno.estado)
   const isPending = turno.estado === 'pendiente'
   const isRegistered = !!turno.customer_id
@@ -33,13 +49,25 @@ export function ShiftCard({ turno, onChangeStatus, onRequestCancel }: ShiftCardP
       />
 
       <div className="flex items-center justify-between">
-        <Badge
-          variant="outline"
-          className="flex items-center gap-1 font-mono text-xs px-2 py-1 bg-background shadow-none"
-        >
-          <Clock className="h-3 w-3 text-muted-foreground" />
-          {turno.hora}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className="flex items-center gap-1 font-mono text-xs px-2 py-1 bg-background shadow-none"
+          >
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            {turno.hora}
+          </Badge>
+
+          {showDate && (
+            <Badge
+              variant="secondary"
+              className="flex items-center gap-1 text-[10px] px-2 py-1 bg-muted/50 border-transparent font-bold uppercase tracking-tight"
+            >
+              <Calendar className="h-3 w-3 opacity-70" />
+              {turno.fecha}
+            </Badge>
+          )}
+        </div>
 
         <Badge
           className={cn(

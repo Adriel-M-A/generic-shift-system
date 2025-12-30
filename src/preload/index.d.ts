@@ -46,6 +46,8 @@ declare global {
         }) => Promise<{ shifts: Shift[]; monthlyLoad: any[] }>
         getYearlyLoad: (year: number) => Promise<any[]>
         updateStatus: (params: { id: number; estado: EstadoTurno }) => Promise<void>
+        getHistoryByCustomer: (customerId: number) => Promise<Shift[]>
+        searchGlobal: (query: string) => Promise<Shift[]>
       }
       services: {
         getPaginated: (params: {

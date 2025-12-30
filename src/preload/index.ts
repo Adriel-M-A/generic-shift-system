@@ -30,7 +30,10 @@ const api = {
     getInitialData: (params) => ipcRenderer.invoke('shift:getInitialData', params),
     getYearlyLoad: (year: number) => ipcRenderer.invoke('shift:getYearlyLoad', year),
     updateStatus: (params: { id: number; estado: EstadoTurno }) =>
-      ipcRenderer.invoke('shift:updateStatus', params)
+      ipcRenderer.invoke('shift:updateStatus', params),
+    getHistoryByCustomer: (customerId: number) =>
+      ipcRenderer.invoke('shift:getHistoryByCustomer', customerId),
+    searchGlobal: (query: string) => ipcRenderer.invoke('shift:searchGlobal', query)
   },
   services: {
     getPaginated: (params: { page: number; limit: number; search: string }) =>

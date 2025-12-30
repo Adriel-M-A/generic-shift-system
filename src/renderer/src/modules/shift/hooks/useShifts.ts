@@ -31,9 +31,17 @@ export function useShifts() {
     }
   }
 
+  const jumpToDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const newDate = new Date(year, month - 1, day)
+    context.changeDate(newDate)
+    context.changeView('month')
+  }
+
   return {
     ...context,
     createShift,
-    updateStatus
+    updateStatus,
+    jumpToDate
   }
 }
