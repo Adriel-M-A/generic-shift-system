@@ -4,7 +4,24 @@ import { Shift, NewShiftData } from './schema'
 export class ShiftService {
   constructor(private db: Database) {}
 
-  create(data: NewShiftData): number {
+  create(data: any): number {
+    let customerId = data.customerId
+
+    if (!customerId && data.createCustomer) {
+      const stmtCust = this.db.prepare(
+        'INSERT INTO customers (nombre, apellido, documento, telefono) VALUES (?, ?, ?, ?)'
+      )
+      const res = stmtCust.run(
+        data.createCustomer.nombre,
+        data.createCustomer.apellido,
+        data.createCustomer.documento,
+        data.createCustomer.telefono
+      )
+      customerId = res.lastInsertRowid as number
+    }
+
+    const serviciosString = Array.isArray(data.servicio) ? data.servicio.join(', ') : data.servicio
+
     const stmt = this.db.prepare(
       'INSERT INTO shifts (fecha, hora, cliente, servicio, estado, customer_id) VALUES (?, ?, ?, ?, ?, ?)'
     )
@@ -12,9 +29,9 @@ export class ShiftService {
       data.fecha,
       data.hora,
       data.cliente,
-      data.servicio,
+      serviciosString,
       'pendiente',
-      data.customerId || null
+      customerId || null
     )
     return result.lastInsertRowid as number
   }
@@ -36,9 +53,10 @@ export class ShiftService {
   }
 
   getInitialData(params: { date: string; year: number; month: number }) {
-    const shifts = this.getByDate(params.date)
-    const monthlyLoad = this.getMonthlyLoad({ year: params.year, month: params.month })
-    return { shifts, monthlyLoad }
+    return {
+      shifts: this.getByDate(params.date),
+      monthlyLoad: this.getMonthlyLoad({ year: params.year, month: params.month })
+    }
   }
 
   getYearlyLoad(year: number): any[] {

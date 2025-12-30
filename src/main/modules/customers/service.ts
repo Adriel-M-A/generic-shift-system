@@ -13,8 +13,8 @@ export class CustomerService {
     let params: any[] = []
 
     if (hasSearch) {
-      whereClause = ' WHERE nombre LIKE ? OR apellido LIKE ? OR documento LIKE ?'
-      params = [searchTerm, searchTerm, searchTerm]
+      whereClause = ' WHERE nombre LIKE ? OR apellido LIKE ? OR documento = ?'
+      params = [searchTerm, searchTerm, search.trim()]
     }
 
     const data = this.db
@@ -25,27 +25,25 @@ export class CustomerService {
       .prepare(`SELECT COUNT(*) as count FROM customers${whereClause}`)
       .get(...params) as { count: number }
 
-    return {
-      customers: data,
-      total: countResult.count
-    }
+    return { customers: data, total: countResult.count }
   }
 
-  getById(id: number): Customer {
-    return this.db.prepare('SELECT * FROM customers WHERE id = ?').get(id) as Customer
+  findByDocument(documento: string): Customer | undefined {
+    return this.db.prepare('SELECT * FROM customers WHERE documento = ?').get(documento.trim()) as
+      | Customer
+      | undefined
   }
 
-  create(data: Omit<Customer, 'id' | 'created_at' | 'updated_at'>): number {
+  create(data: any): number {
     const stmt = this.db.prepare(
       'INSERT INTO customers (nombre, apellido, documento, telefono, email) VALUES (?, ?, ?, ?, ?)'
     )
-    const result = stmt.run(data.nombre, data.apellido, data.documento, data.telefono, data.email)
-    return result.lastInsertRowid as number
+    return stmt.run(data.nombre, data.apellido, data.documento, data.telefono, data.email)
+      .lastInsertRowid as number
   }
 
-  update(id: number, data: Partial<Omit<Customer, 'id' | 'created_at' | 'updated_at'>>): void {
+  update(id: number, data: any): void {
     const entries = Object.entries(data).filter(([_, v]) => v !== undefined)
-    if (entries.length === 0) return
     const fields = entries.map(([k]) => `${k} = ?`).join(', ')
     const values = entries.map(([_, v]) => v)
     this.db

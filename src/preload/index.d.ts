@@ -46,11 +46,18 @@ declare global {
       }
       shift: {
         create: (data: {
-          fecha?: string
+          fecha: string
           hora: string
           cliente: string
-          servicio: string
-          customerId?: number
+          servicio: string[] // Array de servicios
+          customerId?: number | undefined // Cambiado para evitar error de null
+          createCustomer?: {
+            // Definimos la propiedad para que TS la reconozca
+            nombre: string
+            apellido: string
+            documento: string
+            telefono?: string
+          }
         }) => Promise<number>
         getByDate: (date: string) => Promise<any[]>
         getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
@@ -84,6 +91,7 @@ declare global {
           limit: number
           search: string
         }) => Promise<{ customers: Customer[]; total: number }>
+        findByDocument: (documento: string) => Promise<Customer | undefined>
         create: (data: any) => Promise<number>
         update: (id: number | string, data: any) => Promise<void>
         delete: (id: number | string) => Promise<void>

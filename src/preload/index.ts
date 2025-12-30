@@ -40,11 +40,11 @@ const api = {
     delete: (id: number) => ipcRenderer.invoke('services:delete', id)
   },
   customers: {
-    getPaginated: (params: { page: number; limit: number; search: string }) =>
-      ipcRenderer.invoke('customers:getPaginated', params),
-    create: (data: any) => ipcRenderer.invoke('customers:create', data),
-    update: (id: string | number, data: any) => ipcRenderer.invoke('customers:update', id, data),
-    delete: (id: string | number) => ipcRenderer.invoke('customers:delete', id)
+    getPaginated: (params) => ipcRenderer.invoke('customers:getPaginated', params),
+    findByDocument: (documento) => ipcRenderer.invoke('customers:findByDocument', documento),
+    create: (data) => ipcRenderer.invoke('customers:create', data),
+    update: (id, data) => ipcRenderer.invoke('customers:update', id, data),
+    delete: (id) => ipcRenderer.invoke('customers:delete', id)
   },
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
