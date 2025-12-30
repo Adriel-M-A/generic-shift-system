@@ -39,7 +39,7 @@ export function ServiceDialog({ open, onOpenChange, service, onSubmit }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-106">
         <DialogHeader>
           <DialogTitle>{service ? 'Editar Servicio' : 'Nuevo Servicio'}</DialogTitle>
         </DialogHeader>

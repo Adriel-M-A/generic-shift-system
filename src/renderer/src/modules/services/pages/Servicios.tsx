@@ -1,26 +1,9 @@
 import { useState, useEffect } from 'react'
-import {
-  Plus,
-  Search,
-  Trash2,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-  MoreHorizontal
-} from 'lucide-react'
+import { Plus, Search, Trash2, Loader2, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Switch } from '@ui/switch'
 import { TableHeader, TableBody, TableHead, TableRow, TableCell } from '@ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
