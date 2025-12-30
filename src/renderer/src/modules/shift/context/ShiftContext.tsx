@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react'
+import { createContext, useState, useEffect, useCallback, useMemo } from 'react'
 import { Shift, NewShiftData, ShiftConfig, EstadoTurno } from '@shared/types'
 import { parseError } from '@lib/error-utils'
 
@@ -72,16 +72,30 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchShiftsAndLoads = useCallback(async () => {
     setLoading(true)
     try {
-      const params = {
-        date: toLocalISODate(currentDate),
-        year: currentDate.getFullYear(),
-        month: currentDate.getMonth() + 1
-      }
+      const year = currentDate.getFullYear()
+      const month = currentDate.getMonth() + 1
+      const dateStr = toLocalISODate(currentDate)
 
-      const { shifts: dayShifts, monthlyLoad: loadsArray } =
-        await window.api.shift.getInitialData(params)
+      // 1. Siempre obtenemos los turnos del día seleccionado para la lista/sidebar
+      const { shifts: dayShifts } = await window.api.shift.getInitialData({
+        date: dateStr,
+        year,
+        month
+      })
       setShifts(dayShifts)
 
+      // 2. Obtenemos la carga de datos según la vista
+      let loadsArray = []
+      if (view === 'year') {
+        // Llamamos al endpoint de año que ya tienes en el backend
+        loadsArray = await window.api.shift.getYearlyLoad(year)
+      } else {
+        // Si estamos en mes, pedimos solo el mes (contenido en getInitialData o directo)
+        const data = await window.api.shift.getInitialData({ date: dateStr, year, month })
+        loadsArray = data.monthlyLoad
+      }
+
+      // 3. Mapeamos los resultados al estado
       const loadsMap: Record<string, number> = {}
       if (Array.isArray(loadsArray)) {
         loadsArray.forEach((item: any) => {
@@ -94,7 +108,7 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false)
     }
-  }, [currentDate])
+  }, [currentDate, view])
 
   const filteredShifts = useMemo(() => {
     return shifts
