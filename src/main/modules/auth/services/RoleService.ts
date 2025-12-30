@@ -1,27 +1,27 @@
-import { db } from '../../../core/database'
-import { authService } from './AuthService'
+import { Database } from 'better-sqlite3'
+import { AuthService } from './AuthService'
 
 export class RoleService {
+  constructor(
+    private db: Database,
+    private authService: AuthService
+  ) {}
+
   getRoles() {
-    const roles = db.prepare('SELECT * FROM roles ORDER BY id ASC').all() as any[]
+    const roles = this.db.prepare('SELECT * FROM roles ORDER BY id ASC').all() as any[]
     return roles.map((r) => ({ ...r, permissions: JSON.parse(r.permissions) }))
   }
 
   updateRole(id: number, label: string, permissions: string[]) {
-    // Solo Admin (Nivel 1) puede editar roles
-    const currentUser = authService.getCurrentUser()
+    const currentUser = this.authService.getCurrentUser()
     if (!currentUser || currentUser.level !== 1) {
       throw new Error('Solo el administrador puede editar roles')
     }
 
-    db.prepare('UPDATE roles SET label = ?, permissions = ? WHERE id = ?').run(
-      label,
-      JSON.stringify(permissions),
-      id
-    )
+    this.db
+      .prepare('UPDATE roles SET label = ?, permissions = ? WHERE id = ?')
+      .run(label, JSON.stringify(permissions), id)
 
     return { success: true }
   }
 }
-
-export const roleService = new RoleService()

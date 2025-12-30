@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { ElectronAPI } from '@electron-toolkit/preload'
 
 interface Customer {
@@ -8,6 +7,8 @@ interface Customer {
   apellido: string
   telefono?: string
   email?: string
+  created_at?: string
+  updated_at?: string
 }
 
 interface Service {
@@ -33,7 +34,7 @@ declare global {
         updateUser: (id: number, data: any) => Promise<any>
         changePassword: (id: number, current: string, newPass: string) => Promise<any>
         getUsers: () => Promise<{ success: boolean; users: any[] }>
-        deleteUser: (id: number) => Promise<{ success: boolean; message?: string }>
+        deleteUser: (id: number) => Promise<{ success: boolean }>
       }
       roles: {
         getAll: () => Promise<{ success: boolean; roles: any[] }>
@@ -41,16 +42,23 @@ declare global {
           id: number
           label: string
           permissions: string[]
-        }) => Promise<{ success: boolean; message?: string }>
+        }) => Promise<{ success: boolean }>
       }
       shift: {
         create: (data: {
-          fecha?: string
+          fecha: string
           hora: string
           cliente: string
-          servicio: string
-          customerId?: number
-        }) => Promise<any>
+          servicio: string[] // Array de servicios
+          customerId?: number | undefined // Cambiado para evitar error de null
+          createCustomer?: {
+            // Definimos la propiedad para que TS la reconozca
+            nombre: string
+            apellido: string
+            documento: string
+            telefono?: string
+          }
+        }) => Promise<number>
         getByDate: (date: string) => Promise<any[]>
         getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
         getInitialData: (params: {
@@ -59,9 +67,14 @@ declare global {
           month: number
         }) => Promise<{ shifts: any[]; monthlyLoad: any[] }>
         getYearlyLoad: (year: number) => Promise<any[]>
-        updateStatus: (params: { id: number; estado: string }) => Promise<any>
+        updateStatus: (params: { id: number; estado: string }) => Promise<void>
       }
       services: {
+        getPaginated: (params: {
+          page: number
+          limit: number
+          search: string
+        }) => Promise<{ services: Service[]; total: number }>
         getAll: () => Promise<Service[]>
         create: (nombre: string) => Promise<any>
         update: (id: number, nombre: string) => Promise<void>
@@ -73,10 +86,14 @@ declare global {
         setMany: (settings: Record<string, string>) => Promise<any>
       }
       customers: {
-        getAll: () => Promise<Customer[]>
-        search: (query: string) => Promise<Customer[]>
-        create: (data: any) => Promise<boolean>
-        update: (id: number | string, data: any) => Promise<boolean>
+        getPaginated: (params: {
+          page: number
+          limit: number
+          search: string
+        }) => Promise<{ customers: Customer[]; total: number }>
+        findByDocument: (documento: string) => Promise<Customer | undefined>
+        create: (data: any) => Promise<number>
+        update: (id: number | string, data: any) => Promise<void>
         delete: (id: number | string) => Promise<void>
       }
     }

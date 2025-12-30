@@ -31,19 +31,20 @@ const api = {
     updateStatus: (params) => ipcRenderer.invoke('shift:updateStatus', params)
   },
   services: {
+    getPaginated: (params: { page: number; limit: number; search: string }) =>
+      ipcRenderer.invoke('services:getPaginated', params),
     getAll: () => ipcRenderer.invoke('services:getAll'),
-    create: (nombre) => ipcRenderer.invoke('services:create', nombre),
-    update: (id, nombre) => ipcRenderer.invoke('services:update', { id, nombre }),
-    toggle: (id) => ipcRenderer.invoke('services:toggle', id),
-    delete: (id) => ipcRenderer.invoke('services:delete', id)
+    create: (nombre: string) => ipcRenderer.invoke('services:create', nombre),
+    update: (id: number, nombre: string) => ipcRenderer.invoke('services:update', { id, nombre }),
+    toggle: (id: number) => ipcRenderer.invoke('services:toggle', id),
+    delete: (id: number) => ipcRenderer.invoke('services:delete', id)
   },
   customers: {
-    getAll: (): Promise<any[]> => ipcRenderer.invoke('customers:getAll'),
-    search: (query: string): Promise<any[]> => ipcRenderer.invoke('customers:search', query),
-    create: (data: any): Promise<any> => ipcRenderer.invoke('customers:create', data),
-    update: (id: string | number, data: any): Promise<any> =>
-      ipcRenderer.invoke('customers:update', id, data),
-    delete: (id: string | number): Promise<any> => ipcRenderer.invoke('customers:delete', id)
+    getPaginated: (params) => ipcRenderer.invoke('customers:getPaginated', params),
+    findByDocument: (documento) => ipcRenderer.invoke('customers:findByDocument', documento),
+    create: (data) => ipcRenderer.invoke('customers:create', data),
+    update: (id, data) => ipcRenderer.invoke('customers:update', id, data),
+    delete: (id) => ipcRenderer.invoke('customers:delete', id)
   },
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
@@ -59,8 +60,8 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-ignore
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
+  // @ts-ignore
   window.api = api
 }

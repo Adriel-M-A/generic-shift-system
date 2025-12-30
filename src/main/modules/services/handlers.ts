@@ -1,47 +1,38 @@
 import { ipcMain } from 'electron'
-import { servicesService } from './service'
+import { ServicesService } from './service'
 import { ServiceNameSchema } from './validations'
 
-export function registerServicesHandlers() {
-  ipcMain.handle('services:getAll', () => servicesService.getAll())
+export function registerServicesHandlers(service: ServicesService) {
+  ipcMain.handle('services:getPaginated', (_, { page, limit, search }) =>
+    service.getPaginated(page, limit, search)
+  )
+
+  ipcMain.handle('services:getAll', () => service.getAll())
 
   ipcMain.handle('services:create', (_, nombre) => {
-    // Validamos el string directo
     const validation = ServiceNameSchema.safeParse(nombre)
-
-    if (!validation.success) {
-      throw new Error(validation.error.issues[0].message)
-    }
-
+    if (!validation.success) throw new Error(validation.error.issues[0].message)
     try {
-      return servicesService.create(validation.data)
+      return service.create(validation.data)
     } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE')
         throw new Error('Ya existe un servicio con este nombre')
-      }
       throw error
     }
   })
 
   ipcMain.handle('services:update', (_, { id, nombre }) => {
-    // Validamos solo el nombre que viene dentro del objeto
     const validation = ServiceNameSchema.safeParse(nombre)
-
-    if (!validation.success) {
-      throw new Error(validation.error.issues[0].message)
-    }
-
+    if (!validation.success) throw new Error(validation.error.issues[0].message)
     try {
-      return servicesService.update(id, validation.data)
+      return service.update(id, validation.data)
     } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE')
         throw new Error('Ya existe otro servicio con este nombre')
-      }
       throw error
     }
   })
 
-  ipcMain.handle('services:toggle', (_, id) => servicesService.toggleActive(id))
-
-  ipcMain.handle('services:delete', (_, id) => servicesService.delete(id))
+  ipcMain.handle('services:toggle', (_, id) => service.toggleActive(id))
+  ipcMain.handle('services:delete', (_, id) => service.delete(id))
 }

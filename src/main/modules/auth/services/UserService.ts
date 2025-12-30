@@ -1,22 +1,27 @@
-import { db } from '../../../core/database'
+import { Database } from 'better-sqlite3'
 import bcrypt from 'bcryptjs'
-import { authService } from './AuthService' // Dependencia
 import { PERMISSIONS } from '../../../../shared/permissions'
+import { AuthService } from './AuthService'
 
 export class UserService {
+  constructor(
+    private db: Database,
+    private authService: AuthService
+  ) {}
+
   private formatName(text: string): string {
     if (!text) return text
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
   }
 
   getUsers() {
-    return db
+    return this.db
       .prepare('SELECT id, nombre, apellido, usuario, level, last_login, created_at FROM usuarios')
       .all()
   }
 
   createUser(data: any) {
-    if (!authService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) {
+    if (!this.authService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) {
       throw new Error('No tienes permiso para crear usuarios')
     }
 
@@ -24,7 +29,7 @@ export class UserService {
 
     try {
       const hashedPassword = bcrypt.hashSync(password, 10)
-      const info = db
+      const info = this.db
         .prepare(
           `INSERT INTO usuarios (nombre, apellido, usuario, password, level) VALUES (?, ?, ?, ?, ?)`
         )
@@ -37,9 +42,9 @@ export class UserService {
   }
 
   updateUser(id: number, data: any) {
-    const currentUser = authService.getCurrentUser()
+    const currentUser = this.authService.getCurrentUser()
     const isSelf = currentUser?.id === id
-    const hasPerm = authService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)
+    const hasPerm = this.authService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)
 
     if (!isSelf && !hasPerm) throw new Error('No autorizado')
 
@@ -68,34 +73,31 @@ export class UserService {
     if (updates.length === 0) return { success: true }
 
     params.push(id)
-    db.prepare(`UPDATE usuarios SET ${updates.join(', ')} WHERE id = ?`).run(...params)
-
-    // Si me edito a mí mismo, actualizar mi sesión (opcional pero recomendado)
-    // Esto requeriría un método extra en AuthService para actualizar la sesión activa.
+    this.db.prepare(`UPDATE usuarios SET ${updates.join(', ')} WHERE id = ?`).run(...params)
 
     return { success: true }
   }
 
   deleteUser(id: number) {
-    if (!authService.checkPermission(PERMISSIONS.PERFIL.USUARIOS)) throw new Error('No autorizado')
-    if (authService.getCurrentUser()?.id === id) throw new Error('No puedes eliminarte a ti mismo')
+    if (!this.authService.checkPermission(PERMISSIONS.PERFIL.USUARIOS))
+      throw new Error('No autorizado')
+    if (this.authService.getCurrentUser()?.id === id)
+      throw new Error('No puedes eliminarte a ti mismo')
 
-    db.prepare('DELETE FROM usuarios WHERE id = ?').run(id)
+    this.db.prepare('DELETE FROM usuarios WHERE id = ?').run(id)
     return { success: true }
   }
 
   changePassword(id: number, currentPass: string, newPass: string) {
-    if (authService.getCurrentUser()?.id !== id) throw new Error('No autorizado')
+    if (this.authService.getCurrentUser()?.id !== id) throw new Error('No autorizado')
 
-    const user = db.prepare('SELECT password FROM usuarios WHERE id = ?').get(id) as any
+    const user = this.db.prepare('SELECT password FROM usuarios WHERE id = ?').get(id) as any
     if (!user || !bcrypt.compareSync(currentPass, user.password)) {
       throw new Error('Contraseña actual incorrecta')
     }
 
     const hashedNew = bcrypt.hashSync(newPass, 10)
-    db.prepare('UPDATE usuarios SET password = ? WHERE id = ?').run(hashedNew, id)
+    this.db.prepare('UPDATE usuarios SET password = ? WHERE id = ?').run(hashedNew, id)
     return { success: true }
   }
 }
-
-export const userService = new UserService()

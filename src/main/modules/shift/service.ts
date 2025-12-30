@@ -4,7 +4,24 @@ import { Shift, NewShiftData } from './schema'
 export class ShiftService {
   constructor(private db: Database) {}
 
-  async create(data: NewShiftData): Promise<number> {
+  create(data: any): number {
+    let customerId = data.customerId
+
+    if (!customerId && data.createCustomer) {
+      const stmtCust = this.db.prepare(
+        'INSERT INTO customers (nombre, apellido, documento, telefono) VALUES (?, ?, ?, ?)'
+      )
+      const res = stmtCust.run(
+        data.createCustomer.nombre,
+        data.createCustomer.apellido,
+        data.createCustomer.documento,
+        data.createCustomer.telefono
+      )
+      customerId = res.lastInsertRowid as number
+    }
+
+    const serviciosString = Array.isArray(data.servicio) ? data.servicio.join(', ') : data.servicio
+
     const stmt = this.db.prepare(
       'INSERT INTO shifts (fecha, hora, cliente, servicio, estado, customer_id) VALUES (?, ?, ?, ?, ?, ?)'
     )
@@ -12,20 +29,20 @@ export class ShiftService {
       data.fecha,
       data.hora,
       data.cliente,
-      data.servicio,
+      serviciosString,
       'pendiente',
-      data.customerId || null
+      customerId || null
     )
     return result.lastInsertRowid as number
   }
 
-  async getByDate(date: string): Promise<Shift[]> {
+  getByDate(date: string): Shift[] {
     return this.db
       .prepare('SELECT * FROM shifts WHERE fecha = ? ORDER BY hora ASC')
       .all(date) as Shift[]
   }
 
-  async getMonthlyLoad(params: { year: number; month: number }): Promise<any[]> {
+  getMonthlyLoad(params: { year: number; month: number }): any[] {
     const monthStr = String(params.month).padStart(2, '0')
     const pattern = `${params.year}-${monthStr}-%`
     return this.db
@@ -35,17 +52,14 @@ export class ShiftService {
       .all(pattern)
   }
 
-  async getInitialData(params: {
-    date: string
-    year: number
-    month: number
-  }): Promise<{ shifts: Shift[]; monthlyLoad: any[] }> {
-    const shifts = await this.getByDate(params.date)
-    const monthlyLoad = await this.getMonthlyLoad({ year: params.year, month: params.month })
-    return { shifts, monthlyLoad }
+  getInitialData(params: { date: string; year: number; month: number }) {
+    return {
+      shifts: this.getByDate(params.date),
+      monthlyLoad: this.getMonthlyLoad({ year: params.year, month: params.month })
+    }
   }
 
-  async getYearlyLoad(year: number): Promise<any[]> {
+  getYearlyLoad(year: number): any[] {
     const pattern = `${year}-%`
     return this.db
       .prepare(
@@ -54,7 +68,7 @@ export class ShiftService {
       .all(pattern)
   }
 
-  async updateStatus(id: number, estado: string): Promise<void> {
+  updateStatus(id: number, estado: string): void {
     this.db.prepare('UPDATE shifts SET estado = ? WHERE id = ?').run(estado, id)
   }
 }
