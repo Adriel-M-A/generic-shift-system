@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { CustomerFormData, NewShiftData, EstadoTurno } from '../shared/types'
 
 const api = {
   window: {
@@ -23,28 +24,32 @@ const api = {
     update: (data) => ipcRenderer.invoke('roles:update', data)
   },
   shift: {
-    create: (data) => ipcRenderer.invoke('shift:create', data),
-    getByDate: (date) => ipcRenderer.invoke('shift:getByDate', date),
+    create: (data: NewShiftData) => ipcRenderer.invoke('shift:create', data),
+    getByDate: (date: string) => ipcRenderer.invoke('shift:getByDate', date),
     getMonthlyLoad: (params) => ipcRenderer.invoke('shift:getMonthlyLoad', params),
     getInitialData: (params) => ipcRenderer.invoke('shift:getInitialData', params),
-    getYearlyLoad: (year) => ipcRenderer.invoke('shift:getYearlyLoad', year),
-    updateStatus: (params) => ipcRenderer.invoke('shift:updateStatus', params)
+    getYearlyLoad: (year: number) => ipcRenderer.invoke('shift:getYearlyLoad', year),
+    updateStatus: (params: { id: number; estado: EstadoTurno }) =>
+      ipcRenderer.invoke('shift:updateStatus', params)
   },
   services: {
-    getPaginated: (params) => ipcRenderer.invoke('services:getPaginated', params),
+    getPaginated: (params: { page: number; limit: number; search: string }) =>
+      ipcRenderer.invoke('services:getPaginated', params),
     getAll: () => ipcRenderer.invoke('services:getAll'),
-    create: (nombre) => ipcRenderer.invoke('services:create', nombre),
+    create: (nombre: string) => ipcRenderer.invoke('services:create', nombre),
     update: (params: { id: number; nombre: string }) =>
       ipcRenderer.invoke('services:update', params),
-    toggle: (id) => ipcRenderer.invoke('services:toggle', id),
-    delete: (id) => ipcRenderer.invoke('services:delete', id)
+    toggle: (id: number) => ipcRenderer.invoke('services:toggle', id),
+    delete: (id: number) => ipcRenderer.invoke('services:delete', id)
   },
   customers: {
     getPaginated: (params) => ipcRenderer.invoke('customers:getPaginated', params),
-    findByDocument: (documento) => ipcRenderer.invoke('customers:findByDocument', documento),
-    create: (data) => ipcRenderer.invoke('customers:create', data),
-    update: (id, data) => ipcRenderer.invoke('customers:update', id, data),
-    delete: (id) => ipcRenderer.invoke('customers:delete', id)
+    findByDocument: (documento: string) =>
+      ipcRenderer.invoke('customers:findByDocument', documento),
+    create: (data: CustomerFormData) => ipcRenderer.invoke('customers:create', data),
+    update: (id: number, data: CustomerFormData) =>
+      ipcRenderer.invoke('customers:update', id, data),
+    delete: (id: number) => ipcRenderer.invoke('customers:delete', id)
   },
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),

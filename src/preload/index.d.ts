@@ -1,35 +1,12 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-
-export type EstadoTurno = 'pendiente' | 'completado' | 'cancelado' | 'ausente'
-
-interface Customer {
-  id: number
-  documento: string
-  nombre: string
-  apellido: string
-  telefono?: string
-  email?: string
-  created_at?: string
-  updated_at?: string
-}
-
-interface Service {
-  id: number
-  nombre: string
-  activo: number
-}
-
-interface Shift {
-  id: number
-  fecha: string
-  hora: string
-  cliente: string
-  servicio: string
-  estado: EstadoTurno
-  customer_id?: number
-  created_at?: string
-  updated_at?: string
-}
+import {
+  Customer,
+  CustomerFormData,
+  Service,
+  Shift,
+  NewShiftData,
+  EstadoTurno
+} from '../shared/types'
 
 declare global {
   interface Window {
@@ -59,19 +36,7 @@ declare global {
         }) => Promise<{ success: boolean }>
       }
       shift: {
-        create: (data: {
-          fecha: string
-          hora: string
-          cliente: string
-          servicio: string[]
-          customerId?: number
-          createCustomer?: {
-            nombre: string
-            apellido: string
-            documento: string
-            telefono?: string
-          }
-        }) => Promise<number>
+        create: (data: NewShiftData) => Promise<number>
         getByDate: (date: string) => Promise<Shift[]>
         getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
         getInitialData: (params: {
@@ -105,8 +70,8 @@ declare global {
           search: string
         }) => Promise<{ customers: Customer[]; total: number }>
         findByDocument: (documento: string) => Promise<Customer | undefined>
-        create: (data: any) => Promise<number>
-        update: (id: number, data: any) => Promise<void>
+        create: (data: CustomerFormData) => Promise<number>
+        update: (id: number, data: CustomerFormData) => Promise<void>
         delete: (id: number) => Promise<void>
       }
     }
