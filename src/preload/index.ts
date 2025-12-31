@@ -25,6 +25,7 @@ const api = {
   },
   shift: {
     create: (data: NewShiftData) => ipcRenderer.invoke('shift:create', data),
+    update: (id: number, data: any) => ipcRenderer.invoke('shift:update', { id, data }),
     getByDate: (date: string) => ipcRenderer.invoke('shift:getByDate', date),
     getMonthlyLoad: (params) => ipcRenderer.invoke('shift:getMonthlyLoad', params),
     getInitialData: (params) => ipcRenderer.invoke('shift:getInitialData', params),

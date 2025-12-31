@@ -6,15 +6,23 @@ import { parseError } from '@lib/error-utils'
 
 export function useShifts() {
   const context = useContext(ShiftContext)
-
-  if (context === undefined) {
-    throw new Error('useShifts debe usarse dentro de un ShiftProvider')
-  }
+  if (context === undefined) throw new Error('useShifts debe usarse dentro de un ShiftProvider')
 
   const createShift = async (data: NewShiftData): Promise<boolean> => {
     try {
       await context.addShift(data)
       toast.success('Turno agendado correctamente')
+      return true
+    } catch (error: any) {
+      toast.error(parseError(error))
+      return false
+    }
+  }
+
+  const updateShift = async (id: number, data: any): Promise<boolean> => {
+    try {
+      await context.updateShift(id, data)
+      toast.success('Turno actualizado correctamente')
       return true
     } catch (error: any) {
       toast.error(parseError(error))
@@ -38,10 +46,5 @@ export function useShifts() {
     context.changeView('month')
   }
 
-  return {
-    ...context,
-    createShift,
-    updateStatus,
-    jumpToDate
-  }
+  return { ...context, createShift, updateShift, updateStatus, jumpToDate }
 }

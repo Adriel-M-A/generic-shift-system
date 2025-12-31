@@ -37,6 +37,7 @@ declare global {
       }
       shift: {
         create: (data: NewShiftData) => Promise<number>
+        update: (id: number, data: any) => Promise<void>
         getByDate: (date: string) => Promise<Shift[]>
         getMonthlyLoad: (params: { year: number; month: number }) => Promise<any[]>
         getInitialData: (params: {

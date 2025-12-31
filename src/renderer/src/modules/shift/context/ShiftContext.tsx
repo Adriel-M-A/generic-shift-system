@@ -11,10 +11,16 @@ interface ShiftContextType {
   loading: boolean
   searching: boolean
   config: ShiftConfig
+  isSheetOpen: boolean
+  editingShift: Shift | null
   getDailyLoad: (date: Date) => number
   changeDate: (date: Date) => void
   changeView: (view: 'month' | 'year') => void
-  addShift: (data: NewShiftData) => Promise<void>
+  openCreateSheet: () => void
+  openEditSheet: (shift: Shift) => void
+  closeSheet: () => void
+  addShift: (data: NewShiftData) => Promise<boolean>
+  updateShift: (id: number, data: any) => Promise<boolean>
   changeShiftStatus: (id: number, estado: EstadoTurno) => Promise<void>
   updateConfig: (newConfig: ShiftConfig) => Promise<void>
   fetchShiftsAndLoads: () => Promise<void>
@@ -46,11 +52,29 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
   const [searching, setSearching] = useState(false)
   const [config, setConfig] = useState<ShiftConfig>(DEFAULT_CONFIG)
 
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [editingShift, setEditingShift] = useState<Shift | null>(null)
+
   const toLocalISODate = (d: Date): string => {
     const year = d.getFullYear()
     const month = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
+  }
+
+  const openCreateSheet = () => {
+    setEditingShift(null)
+    setIsSheetOpen(true)
+  }
+
+  const openEditSheet = (shift: Shift) => {
+    setEditingShift(shift)
+    setIsSheetOpen(true)
+  }
+
+  const closeSheet = () => {
+    setIsSheetOpen(false)
+    setEditingShift(null)
   }
 
   const loadConfig = async () => {
@@ -82,7 +106,6 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
       const year = currentDate.getFullYear()
       const month = currentDate.getMonth() + 1
       const dateStr = toLocalISODate(currentDate)
-
       const response = await window.api.shift.getInitialData({ date: dateStr, year, month })
       setShifts(response.shifts)
 
@@ -159,6 +182,17 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
       const fecha = data.fecha || toLocalISODate(currentDate)
       await window.api.shift.create({ ...data, fecha })
       await fetchShiftsAndLoads()
+      return true
+    } catch (error) {
+      throw new Error(parseError(error))
+    }
+  }
+
+  const updateShift = async (id: number, data: any) => {
+    try {
+      await window.api.shift.update(id, data)
+      await fetchShiftsAndLoads()
+      return true
     } catch (error) {
       throw new Error(parseError(error))
     }
@@ -204,10 +238,16 @@ export const ShiftProvider = ({ children }: { children: React.ReactNode }) => {
         loading,
         searching,
         config,
+        isSheetOpen,
+        editingShift,
         getDailyLoad,
         changeDate: setCurrentDate,
         changeView: setView,
+        openCreateSheet,
+        openEditSheet,
+        closeSheet,
         addShift,
+        updateShift,
         changeShiftStatus,
         updateConfig,
         fetchShiftsAndLoads,

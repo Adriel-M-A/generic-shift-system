@@ -1,5 +1,6 @@
 import { CalendarSection } from '../components/layout/CalendarSection'
 import { ShiftSection } from '../components/layout/ShiftSection'
+import { ShiftSheetForm } from '../components/ShiftSheetForm'
 
 export default function Turnos() {
   return (
@@ -11,6 +12,8 @@ export default function Turnos() {
       <div className="col-span-12 lg:col-span-4 h-full min-h-0">
         <ShiftSection />
       </div>
+
+      <ShiftSheetForm />
     </div>
   )
 }

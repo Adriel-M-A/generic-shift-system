@@ -21,6 +21,10 @@ export function registerShiftHandlers(service: ShiftService) {
     }
   })
 
+  ipcMain.handle('shift:update', (_, { id, data }) => {
+    return service.update(id, data)
+  })
+
   ipcMain.handle('shift:getByDate', (_, date: string) => {
     DateParamSchema.parse(date)
     return service.getByDate(date)

@@ -36,6 +36,14 @@ export class ShiftService {
     return result.lastInsertRowid as number
   }
 
+  update(id: number, data: any): void {
+    const serviciosString = Array.isArray(data.servicio) ? data.servicio.join(', ') : data.servicio
+    const stmt = this.db.prepare(
+      'UPDATE shifts SET fecha = ?, hora = ?, cliente = ?, servicio = ?, customer_id = ? WHERE id = ?'
+    )
+    stmt.run(data.fecha, data.hora, data.cliente, serviciosString, data.customerId || null, id)
+  }
+
   getByDate(date: string): Shift[] {
     return this.db
       .prepare('SELECT * FROM shifts WHERE fecha = ? ORDER BY hora ASC')
