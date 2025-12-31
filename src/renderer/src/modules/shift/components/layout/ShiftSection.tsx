@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect } from 'react'
-import { CalendarCheck2, X, Search, Loader2 } from 'lucide-react'
+import { CalendarCheck2, X, Search, Loader2, Plus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@ui/card'
 import { Badge } from '@ui/badge'
+import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { ScrollArea } from '@ui/scroll-area'
 import {
@@ -18,7 +19,7 @@ import {
 import { useShifts } from '../../hooks/useShifts'
 import { ShiftList } from '../ShiftList'
 import { ShiftCard } from '../ShiftCard'
-import { ShiftForm } from '../ShiftForm'
+import { ShiftSheetForm } from '../ShiftSheetForm'
 import { formatDateHeader } from '../../utils'
 
 export function ShiftSection() {
@@ -30,7 +31,8 @@ export function ShiftSection() {
     searchResults,
     searching,
     clearSearch,
-    jumpToDate
+    jumpToDate,
+    openCreateSheet
   } = useShifts()
   const [shiftToCancel, setShiftToCancel] = useState<number | null>(null)
   const [globalSearch, setGlobalSearch] = useState('')
@@ -44,7 +46,7 @@ export function ShiftSection() {
       }
     }, 400)
     return () => clearTimeout(timer)
-  }, [globalSearch])
+  }, [globalSearch, searchShifts, clearSearch])
 
   const shiftToCancelData = useMemo(() => {
     const allShifts = [...shifts, ...searchResults]
@@ -74,7 +76,12 @@ export function ShiftSection() {
             </div>
 
             <div className="shrink-0">
-              <ShiftForm />
+              <Button
+                onClick={() => openCreateSheet()}
+                className="gap-2 shadow-sm bg-primary h-9 font-semibold"
+              >
+                <Plus className="h-4 w-4" /> Nuevo Turno
+              </Button>
             </div>
           </div>
 
@@ -174,6 +181,9 @@ export function ShiftSection() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Componente del formulario en Sheet */}
+      <ShiftSheetForm />
     </>
   )
 }
